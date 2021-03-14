@@ -59,6 +59,50 @@ def home():
         column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()), zip=zip
     )
 
+@app.route('/works', methods=['GET'])
+def studnet_works(classID):
+    name = session.get('name')
+    if name is not None:
+        engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+        conn = engine.connect()
+        # classID=334, userID=7765
+        query="""
+        declare @ClassID as int
+        declare @UserID as int
+        set @ClassID={}
+        set @UserID={}
+        select r1.*,r2.RowNum from 
+        (
+            select userActivities.*,classActivities.PersonCompleted from
+            (
+                select Activities.ActivityID,SubmitTime,ActivityName,UserID from StudentWorks inner join Activities on StudentWorks.ActivityID=Activities.ActivityID
+                where ClassID=@ClassID and UserID=@UserID
+            ) as userActivities
+            inner join (
+                select ActivityID, count(ActivityID) as PersonCompleted 
+                from StudentWorks
+                where ClassID=@ClassID 
+                group by ActivityID
+            ) as classActivities on userActivities.ActivityID=classActivities.ActivityID
+        ) as r1 inner join
+        (
+            select * from
+            (
+                select ROW_NUMBER() over(Partition By ActivityID order by SubmitTime) as RowNum, UserID,ActivityID,SubmitTime from StudentWorks
+                where ClassID=@ClassID 
+            ) as r1 where UserID=@UserID
+        
+        ) as r2 on r1.UserID=r2.UserID and r1.ActivityID=r2.ActivityID
+        order by SubmitTime
+        """.format(334,7765)
+        studentWorks_df=pd.read_sql_query(query, conn)
+        return render_template(
+            'index.html',
+            title='Home Page',
+            name=name,
+            column_names=studentWorks_df.columns.values, row_data=list(studentWorks_df.values.tolist()), zip=zip
+        )
+
 @app.route('/contact')
 def contact():
     """Renders the contact page."""
