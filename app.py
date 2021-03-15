@@ -21,10 +21,13 @@ class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
     submit = SubmitField('Submit')
 
-
+@app.route('/logout',methods=['GET'])
+def logout():
+    session['name']=None
+    return redirect(url_for('home'))
 
 @app.route('/', methods=['GET','POST'])
-@app.route('/home')
+@app.route('/home', methods=['GET','POST'])
 def home():
     name=session.get('name') #None
     form=NameForm()
@@ -37,7 +40,7 @@ def home():
     query="""
             select StudentCourses.*,ActivityCount from 
         (
-        select Courses.ID as CourseID, Courses.Name +'- ' + Classes.ClassName as FullClassName
+        select Courses.ID as CourseID, Courses.Name +'- ' + Classes.ClassName as FullClassName,Classes.ClassID
         from Courses inner join Classes on Courses.ID=Classes.CourseID
         inner join Enrollment on Classes.ClassID=Enrollment.ClassID
         inner join Users on Enrollment.UserID=Users.UserID
@@ -59,12 +62,19 @@ def home():
         column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()), zip=zip
     )
 
-@app.route('/works', methods=['GET'])
+@app.route('/works/<classID>', methods=['GET'])
 def studnet_works(classID):
     name = session.get('name')
     if name is not None:
         engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
         conn = engine.connect()
+        # Get UserID by UserName
+        query='''
+        select UserID from Users where USERNAME='{}'\
+        '''.format(name)
+        user_df = pd.read_sql_query(query, conn)
+        userID=user_df.values[0].item()
+        print(userID)
         # classID=334, userID=7765
         query="""
         declare @ClassID as int
@@ -94,11 +104,12 @@ def studnet_works(classID):
         
         ) as r2 on r1.UserID=r2.UserID and r1.ActivityID=r2.ActivityID
         order by SubmitTime
-        """.format(334,7765)
+        """.format(classID,userID)  #7765
         studentWorks_df=pd.read_sql_query(query, conn)
         return render_template(
-            'index.html',
-            title='Home Page',
+            'works.html',
+            title='Student Works',
+            year=datetime.now().year,
             name=name,
             column_names=studentWorks_df.columns.values, row_data=list(studentWorks_df.values.tolist()), zip=zip
         )
@@ -124,4 +135,4 @@ def about():
     )
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

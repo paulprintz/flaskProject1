@@ -295,3 +295,18 @@ for index, row in new_studentWorks.iterrows():
         print(insert_sql)
         engine.execute(insert_sql)
 # 完成
+
+print("abc"+"\n"+"def")
+
+#########################################################################################################
+from sqlalchemy import create_engine,MetaData, Table, Column, Integer, String
+import pandas as pd
+engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+conn = engine.connect()
+# Get UserID by UserName
+query = '''
+select UserID from Users where USERNAME='{}'\
+'''.format('jackson')
+user_df = pd.read_sql_query(query, conn)
+userID = user_df['UserID'][1]
+print(userID)

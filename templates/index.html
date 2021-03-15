@@ -27,7 +27,8 @@
         <p><a class="btn btn-default" href="http://azure.microsoft.com">Learn more &raquo;</a></p>
     </div>
 </div>
-<h1>Hello, {% if name %}{{ name }}{% else %}Stranger{% endif %}!</h1>
+
+<h1>Hello, {% if name %}{{ name }}{% else %}Stranger{% endif %}!</h1>    <p><a href="http://localhost:5000/logout" class="btn btn-primary btn-large">Logout &raquo;</a></p>
     {% if name is none %}
         {{ wtf.quick_form(form) }}
     {% endif %}
