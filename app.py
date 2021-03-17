@@ -113,7 +113,34 @@ def studnet_works(classID):
             name=name,
             column_names=studentWorks_df.columns.values, row_data=list(studentWorks_df.values.tolist()), zip=zip
         )
+@app.route('/courses')
+def courses():
+    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+    conn = engine.connect()
+    query='''select * from Courses'''
+    courses_df = pd.read_sql_query(query, conn)
+    return render_template('courses.html',
+                           title='Courses',
+                           year=datetime.now().year,
+                           column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()),
+                           zip=zip
+                           )
 
+@app.route('/activities/<courseID>',methods=['GET'])
+def activities(courseID):
+    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+    conn = engine.connect()
+    query='''
+    select * from Activities where CourseID={} and ActivityType='assignment'
+    '''.format(courseID)
+    courses_df = pd.read_sql_query(query, conn)
+    return render_template('courses.html',
+                           title='Courses',
+                           year=datetime.now().year,
+                           column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()),
+                           zip=zip
+                           )
+    
 @app.route('/contact')
 def contact():
     """Renders the contact page."""
@@ -136,3 +163,11 @@ def about():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+# @app.route('/works/<cID>')
+# def works(cID=1):
+#     """Renders the contact page."""
+#     return render_template(
+#         'works.html'
+#     )

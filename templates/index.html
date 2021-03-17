@@ -41,10 +41,12 @@
     </thead>
     <tbody>
     {% for row in row_data %}
-    <tr>
+    <tr onclick="location.href='/works/{{ row_data[0][2] }}';">
         {% for col, row_ in zip(column_names,row) %}
         <td>{{ row_ }}</td>
         {% endfor %}
+       <td><a href="{{ url_for('studnet_works', classID=row_data[0][2]) }}">test</a></td>
+
     </tr>
     {% endfor %}
     </tbody>
