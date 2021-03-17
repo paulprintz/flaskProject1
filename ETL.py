@@ -300,8 +300,6 @@ for index, row in new_studentWorks.iterrows():
         engine.execute(insert_sql)
 # 完成
 
-print("abc"+"\n"+"def")
-
 #########################################################################################################
 from sqlalchemy import create_engine,MetaData, Table, Column, Integer, String
 import pandas as pd

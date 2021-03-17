@@ -1,7 +1,7 @@
 """
 Routes and views for the flask application.
 """
-from flask import Flask,render_template,session,redirect, url_for
+from flask import Flask,render_template,session,redirect, url_for, send_from_directory,send_file,make_response
 from datetime import datetime
 
 from flask_wtf import FlaskForm
@@ -13,8 +13,11 @@ from flask_bootstrap import Bootstrap
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String
 import pandas as pd
 
+import os
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hard to guess string'
+app.config["UPLOAD_FOLDER"]='upload'
 bootstrap = Bootstrap(app)
 
 class NameForm(FlaskForm):
@@ -160,6 +163,21 @@ def about():
         year=datetime.now().year,
         message='Your application description page.'
     )
+
+@app.route("/movies", methods=["GET"])
+def get_movie():
+    return send_from_directory(
+                app.config["UPLOAD_FOLDER"],
+                "media1.mp4",
+                conditional=True,
+            )
+
+@app.route('/<vid_name>')
+def serve_video(vid_name):
+    vid_path=os.path.join(app.config["UPLOAD_FOLDER"],"media1.mp4")
+    resp = make_response(send_file( vid_path,'video/mp4'))
+    resp.headers['Content-Disposition'] = 'inline'
+    return resp
 
 if __name__ == '__main__':
     app.run(debug=True)
