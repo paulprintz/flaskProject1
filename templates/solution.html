@@ -1,0 +1,6 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <h1>{{ courseName+' - '+activityName }}</h1>
+    {{ wtf.quick_form(form) }}
+{% endblock %}

@@ -5,7 +5,7 @@ from flask import Flask,render_template,session,redirect, url_for, send_from_dir
 from datetime import datetime
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField,FileField
 from wtforms.validators import DataRequired
 
 from flask_bootstrap import Bootstrap
@@ -23,6 +23,11 @@ bootstrap = Bootstrap(app)
 class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
     submit = SubmitField('Submit')
+
+class SolutionForm(FlaskForm):
+    file=FileField()
+    activityID=0
+    submit=SubmitField('Submit')
 
 @app.route('/logout',methods=['GET'])
 def logout():
@@ -137,13 +142,36 @@ def activities(courseID):
     select * from Activities where CourseID={} and ActivityType='assignment'
     '''.format(courseID)
     courses_df = pd.read_sql_query(query, conn)
-    return render_template('courses.html',
+    return render_template('activities.html',
                            title='Courses',
                            year=datetime.now().year,
                            column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()),
                            zip=zip
                            )
-    
+@app.route('/solution/<activityID>', methods=['GET','POST'])
+def solution(activityID):
+    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+    conn = engine.connect()
+    query='''
+    select ActivityID,Courses.Name as CourseName, ActivityName
+    from Activities inner join Courses on Activities.CourseID=Courses.ID
+    where ActivityID={}
+    '''.format(activityID)
+    activity_df = pd.read_sql_query(query, conn)
+    form=SolutionForm()
+    form.activityID=activityID
+    #if form.validate_on_submit():
+        # name=form.name.data
+        # session['name']=name
+    return render_template(
+        'solution.html',
+        title='Solution',
+        form=form,
+        activityID=activityID,
+        courseName=activity_df['CourseName'][0],
+        activityName=activity_df['ActivityName'][0]
+    )
+
 @app.route('/contact')
 def contact():
     """Renders the contact page."""
