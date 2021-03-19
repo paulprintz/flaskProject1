@@ -67,8 +67,11 @@ def home():
         year=datetime.now().year,
         form=form,
         name=name,
-        column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()), zip=zip
+        column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()), zip=zip,
+        enumerate=enumerate
     )
+# def addIndex(df):
+#     return [r for r in zip(range(len(df.values.tolist())),df.values.tolist())]
 
 @app.route('/works/<classID>', methods=['GET'])
 def studnet_works(classID):
@@ -200,12 +203,12 @@ def get_movie():
                 conditional=True,
             )
 
-@app.route('/<vid_name>')
-def serve_video(vid_name):
-    vid_path=os.path.join(app.config["UPLOAD_FOLDER"],"media1.mp4")
-    resp = make_response(send_file( vid_path,'video/mp4'))
-    resp.headers['Content-Disposition'] = 'inline'
-    return resp
+# @app.route('/<vid_name>')
+# def serve_video(vid_name):
+#     vid_path=os.path.join(app.config["UPLOAD_FOLDER"],"media1.mp4")
+#     resp = make_response(send_file( vid_path,'video/mp4'))
+#     resp.headers['Content-Disposition'] = 'inline'
+#     return resp
 
 if __name__ == '__main__':
     app.run(debug=True)
