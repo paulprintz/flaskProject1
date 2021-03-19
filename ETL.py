@@ -250,6 +250,10 @@ for index, row in new_enrollment.iterrows():
 # 完成
 
 ################################################################################################################
+# 增量备份 Enrollment
+import pandas as pd
+
+################################################################################################################
 # 增量备份 StudentWorks
 import pandas as pd
 #from bs4 import BeautifulSoup
@@ -295,8 +299,6 @@ for index, row in new_studentWorks.iterrows():
         print(insert_sql)
         engine.execute(insert_sql)
 # 完成
-
-print("abc"+"\n"+"def")
 
 #########################################################################################################
 from sqlalchemy import create_engine,MetaData, Table, Column, Integer, String

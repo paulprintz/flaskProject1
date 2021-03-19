@@ -1,11 +1,11 @@
 """
 Routes and views for the flask application.
 """
-from flask import Flask,render_template,session,redirect, url_for
+from flask import Flask,render_template,session,redirect, url_for, send_from_directory,send_file,make_response
 from datetime import datetime
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField,FileField
 from wtforms.validators import DataRequired
 
 from flask_bootstrap import Bootstrap
@@ -13,13 +13,21 @@ from flask_bootstrap import Bootstrap
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String
 import pandas as pd
 
+import os
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hard to guess string'
+app.config["UPLOAD_FOLDER"]='upload'
 bootstrap = Bootstrap(app)
 
 class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
     submit = SubmitField('Submit')
+
+class SolutionForm(FlaskForm):
+    file=FileField()
+    activityID=0
+    submit=SubmitField('Submit')
 
 @app.route('/logout',methods=['GET'])
 def logout():
@@ -113,6 +121,56 @@ def studnet_works(classID):
             name=name,
             column_names=studentWorks_df.columns.values, row_data=list(studentWorks_df.values.tolist()), zip=zip
         )
+@app.route('/courses')
+def courses():
+    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+    conn = engine.connect()
+    query='''select * from Courses'''
+    courses_df = pd.read_sql_query(query, conn)
+    return render_template('courses.html',
+                           title='Courses',
+                           year=datetime.now().year,
+                           column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()),
+                           zip=zip
+                           )
+
+@app.route('/activities/<courseID>',methods=['GET'])
+def activities(courseID):
+    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+    conn = engine.connect()
+    query='''
+    select * from Activities where CourseID={} and ActivityType='assignment'
+    '''.format(courseID)
+    courses_df = pd.read_sql_query(query, conn)
+    return render_template('activities.html',
+                           title='Courses',
+                           year=datetime.now().year,
+                           column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()),
+                           zip=zip
+                           )
+@app.route('/solution/<activityID>', methods=['GET','POST'])
+def solution(activityID):
+    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+    conn = engine.connect()
+    query='''
+    select ActivityID,Courses.Name as CourseName, ActivityName
+    from Activities inner join Courses on Activities.CourseID=Courses.ID
+    where ActivityID={}
+    '''.format(activityID)
+    activity_df = pd.read_sql_query(query, conn)
+    form=SolutionForm()
+    form.activityID=activityID
+    #if form.validate_on_submit():
+        # name=form.name.data
+        # session['name']=name
+    return render_template(
+        'solution.html',
+        title='Solution',
+        form=form,
+        activityID=activityID,
+        courseName=activity_df['CourseName'][0],
+        activityName=activity_df['ActivityName'][0]
+    )
 
 @app.route('/contact')
 def contact():
@@ -134,5 +192,28 @@ def about():
         message='Your application description page.'
     )
 
+@app.route("/movies", methods=["GET"])
+def get_movie():
+    return send_from_directory(
+                app.config["UPLOAD_FOLDER"],
+                "media1.mp4",
+                conditional=True,
+            )
+
+@app.route('/<vid_name>')
+def serve_video(vid_name):
+    vid_path=os.path.join(app.config["UPLOAD_FOLDER"],"media1.mp4")
+    resp = make_response(send_file( vid_path,'video/mp4'))
+    resp.headers['Content-Disposition'] = 'inline'
+    return resp
+
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+# @app.route('/works/<cID>')
+# def works(cID=1):
+#     """Renders the contact page."""
+#     return render_template(
+#         'works.html'
+#     )
