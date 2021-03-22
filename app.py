@@ -1,12 +1,12 @@
 """
 Routes and views for the flask application.
 """
-from flask import Flask,render_template,session,redirect, url_for, send_from_directory,send_file,make_response
+from flask import Flask,render_template,session,redirect, url_for, send_from_directory,send_file,make_response,request,jsonify
 from datetime import datetime
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField,FileField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SubmitField,FileField,TextAreaField
+from wtforms.validators import DataRequired,InputRequired,Length
 
 from flask_bootstrap import Bootstrap
 
@@ -25,6 +25,9 @@ class NameForm(FlaskForm):
     submit = SubmitField('Submit')
 
 class SolutionForm(FlaskForm):
+    title = StringField('Title', validators=[InputRequired(), Length(max=100)])
+    post = TextAreaField('Write something')
+    tags = StringField('Tags')
     file=FileField()
     activityID=0
     submit=SubmitField('Submit')
@@ -163,6 +166,7 @@ def solution(activityID):
     activity_df = pd.read_sql_query(query, conn)
     form=SolutionForm()
     form.activityID=activityID
+    form.title=activity_df['ActivityName'][0]
     #if form.validate_on_submit():
         # name=form.name.data
         # session['name']=name
@@ -174,6 +178,22 @@ def solution(activityID):
         courseName=activity_df['CourseName'][0],
         activityName=activity_df['ActivityName'][0]
     )
+@app.route('/imageuploader', methods=['POST'])
+#@login_required
+def imageuploader():
+    ext=''
+    file = request.files.get('file')
+    if file:
+        filename = file.filename.lower()
+        if ext in ['jpg', 'gif', 'png', 'jpeg']:
+            img_fullpath = os.path.join(app.config['UPLOADED_PATH'], filename)
+            file.save(img_fullpath)
+            return jsonify({'location' : filename})
+
+    # fail, image did not upload
+    output = make_response(404)
+    output.headers['Error'] = 'Image failed to upload'
+    return output
 
 @app.route('/contact')
 def contact():
