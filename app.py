@@ -167,10 +167,12 @@ def solution(activityID):
         solution_df = pd.read_sql_query(query, conn)
         if len(solution_df)>0:
             query='''update Solutions set PostText='{}' where activityID={}'''.format(postText,activityID)
-            pd.read_sql_query(query, conn)
+            engine.execute(query)
+            #pd.read_sql_query(query, conn)
         else:
             query='''insert into Solutions (ActivityID, PostText) values ({},'{}')'''.format(activityID,postText)
-            pd.read_sql_query(query, conn)
+            engine.execute(query)
+            #pd.read_sql_query(query, conn)
         query = '''select * from Solutions where activityID={}'''.format(activityID)
         solution_df = pd.read_sql_query(query, conn)
         return redirect(url_for('solution_details', solutionID=solution_df['SolutionID'][0]))
@@ -196,8 +198,12 @@ def solution(activityID):
     )
 @app.route('/solution_details/<solutionID>')
 def solution_details(solutionID):
-    return render_template("solution_details.html",
-                           post_text="abcdefg")
+    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+    conn = engine.connect()
+    query = '''select * from Solutions where solutionID={}'''.format(solutionID)
+    solution_df=pd.read_sql_query(query, conn)
+    return render_template("solutiondetails.html",
+                           post_text=solution_df['PostText'][0])
 
 @app.route('/imageuploader', methods=['POST'])
 #@login_required

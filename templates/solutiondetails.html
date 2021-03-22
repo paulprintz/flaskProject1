@@ -3,5 +3,5 @@
 {% block content %}
 
     <h1>{{ "courseName+' - '+activityName" }}</h1>
-    <div>{{ post_text }}</div>
+    <div>{{ post_text | safe }}</div>
 {% endblock %}
