@@ -45,6 +45,7 @@ def home():
     if form.validate_on_submit():
         name=form.name.data
         session['name']=name
+        return redirect(url_for('home'))
 
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
@@ -67,7 +68,7 @@ def home():
     return render_template(
         'index.html',
         title='Home Page',
-        year=datetime.now().year,
+        # year=datetime.now().year,
         form=form,
         name=name,
         column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()), zip=zip,
