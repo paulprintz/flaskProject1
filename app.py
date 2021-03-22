@@ -5,7 +5,7 @@ from flask import Flask,render_template,session,redirect, url_for, send_from_dir
 from datetime import datetime
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField,FileField,TextAreaField
+from wtforms import StringField, SubmitField,FileField,TextAreaField,HiddenField
 from wtforms.validators import DataRequired,InputRequired,Length
 
 from flask_bootstrap import Bootstrap
@@ -29,7 +29,7 @@ class SolutionForm(FlaskForm):
     post = TextAreaField('Write something')
     tags = StringField('Tags')
     file=FileField()
-    activityID=0
+    activityID=HiddenField('activityID')
     submit=SubmitField('Submit')
 
 @app.route('/logout',methods=['GET'])
@@ -158,15 +158,30 @@ def activities(courseID):
 def solution(activityID):
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
+    form=SolutionForm()
+    if form.validate_on_submit():
+        postText=form.post.data
+        activityID=form.activityID.data
+        query='''select * from Solutions where activityID={}'''.format(activityID)
+        solution_df = pd.read_sql_query(query, conn)
+        if len(solution_df)>0:
+            query='''update Solutions set PostText='{}' where activityID={}'''.format(postText,activityID)
+            pd.read_sql_query(query, conn)
+        else:
+            query='''insert into Solutions (ActivityID, PostText) values ({},'{}')'''.format(activityID,postText)
+            pd.read_sql_query(query, conn)
+        query = '''select * from Solutions where activityID={}'''.format(activityID)
+        solution_df = pd.read_sql_query(query, conn)
+        return redirect(url_for('solution_details', solutionID=solution_df['SolutionID'][0]))
+        print(postText)
     query='''
     select ActivityID,Courses.Name as CourseName, ActivityName
     from Activities inner join Courses on Activities.CourseID=Courses.ID
     where ActivityID={}
     '''.format(activityID)
     activity_df = pd.read_sql_query(query, conn)
-    form=SolutionForm()
-    form.activityID=activityID
-    form.title=activity_df['ActivityName'][0]
+    form.activityID.data=activityID
+    form.title.data=activity_df['ActivityName'][0]
     #if form.validate_on_submit():
         # name=form.name.data
         # session['name']=name
@@ -178,6 +193,11 @@ def solution(activityID):
         courseName=activity_df['CourseName'][0],
         activityName=activity_df['ActivityName'][0]
     )
+@app.route('/solution_details/<solutionID>')
+def solution_details(solutionID):
+    return render_template("solution_details.html",
+                           post_text="abcdefg")
+
 @app.route('/imageuploader', methods=['POST'])
 #@login_required
 def imageuploader():
