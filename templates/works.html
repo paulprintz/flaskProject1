@@ -17,7 +17,8 @@
     {% for row in row_data %}
     <tr>
         {% for col, row_ in zip(column_names,row) %}
-        <td>{{ row_ }}</td>
+            <td onclick="location.href='/solution_details/{{ row[0] }}';">{{ row_ }}</td>
+{#            <td>{{ row_ }}</td>#}
         {% endfor %}
     </tr>
     {% endfor %}
