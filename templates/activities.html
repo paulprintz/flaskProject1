@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 
 {% block content %}
+        <div><a href="{{ url_for("courses") }}">Back</a></div>
     <div>
     <table>
     <thead>
@@ -12,11 +13,12 @@
     {% for row in row_data %}
     <tr >
         {% for col, row_ in zip(column_names,row) %}
-        <td onclick="location.href='/solution/{{ row[1] }}';">{{ row_ }}</td>
+        <td onclick="location.href='/solution_details/{{ row[1] }}';">{{ row_ }}</td>
         {% endfor %}
     </tr>
     {% endfor %}
     </tbody>
     </table>
     </div>
+
 {% endblock %}

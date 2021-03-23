@@ -312,3 +312,13 @@ select UserID from Users where USERNAME='{}'\
 user_df = pd.read_sql_query(query, conn)
 userID = user_df['UserID'][1]
 print(userID)
+
+####################################################
+# Fiddle with update
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mssql+pymssql://sa:111111@localhost/LSS'
+db = SQLAlchemy(app)
+

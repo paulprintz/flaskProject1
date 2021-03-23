@@ -1,12 +1,12 @@
 """
 Routes and views for the flask application.
 """
-from flask import Flask,render_template,session,redirect, url_for, send_from_directory,send_file,make_response
+from flask import Flask,render_template,session,redirect, url_for, send_from_directory,send_file,make_response,request,jsonify
 from datetime import datetime
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField,FileField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SubmitField,FileField,TextAreaField,HiddenField
+from wtforms.validators import DataRequired,InputRequired,Length
 
 from flask_bootstrap import Bootstrap
 
@@ -25,8 +25,11 @@ class NameForm(FlaskForm):
     submit = SubmitField('Submit')
 
 class SolutionForm(FlaskForm):
+    title = StringField('Title', validators=[InputRequired(), Length(max=100)])
+    post = TextAreaField('Write something')
+    tags = StringField('Tags')
     file=FileField()
-    activityID=0
+    activityID=HiddenField('activityID')
     submit=SubmitField('Submit')
 
 @app.route('/logout',methods=['GET'])
@@ -42,6 +45,7 @@ def home():
     if form.validate_on_submit():
         name=form.name.data
         session['name']=name
+        return redirect(url_for('home'))
 
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
@@ -64,11 +68,14 @@ def home():
     return render_template(
         'index.html',
         title='Home Page',
-        year=datetime.now().year,
+        # year=datetime.now().year,
         form=form,
         name=name,
-        column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()), zip=zip
+        column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()), zip=zip,
+        enumerate=enumerate
     )
+# def addIndex(df):
+#     return [r for r in zip(range(len(df.values.tolist())),df.values.tolist())]
 
 @app.route('/works/<classID>', methods=['GET'])
 def studnet_works(classID):
@@ -125,8 +132,18 @@ def studnet_works(classID):
 def courses():
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
-    query='''select * from Courses'''
+    query='''
+    select Courses.*,courseActivities_r1.AssignmentCount,courseSolutions_r2.SolutionCount from Courses
+    left outer join
+    (select CourseID, Count(ActivityID) as AssignmentCount from Activities where ActivityType='assignment' group by CourseID) as courseActivities_r1
+    on Courses.ID=courseActivities_r1.CourseID left outer join 
+    (select CourseID, Count(SolutionID) as SolutionCount from Solutions inner join Activities on Solutions.ActivityID=Activities.ActivityID
+    group by CourseID) as courseSolutions_r2
+    on Courses.ID=courseSolutions_r2.CourseID'''
     courses_df = pd.read_sql_query(query, conn)
+    courses_df.fillna(0,inplace=True)
+    courses_df['SolutionCount']=courses_df['SolutionCount'].astype(int)
+    courses_df['AssignmentCount'] = courses_df['AssignmentCount'].astype(int)
     return render_template('courses.html',
                            title='Courses',
                            year=datetime.now().year,
@@ -139,9 +156,15 @@ def activities(courseID):
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
     query='''
-    select * from Activities where CourseID={} and ActivityType='assignment'
+    select activities_r1.*,solutions_r2.SolutionCount from
+    (select * from Activities where CourseID={} and ActivityType='assignment') as activities_r1
+    left outer join
+    (select ActivityID, Count(SolutionID) as SolutionCount  from Solutions group by ActivityID) as solutions_r2
+    on activities_r1.ActivityID=solutions_r2.ActivityID
     '''.format(courseID)
     courses_df = pd.read_sql_query(query, conn)
+    courses_df.fillna(0,inplace=True)
+    courses_df["SolutionCount"] = courses_df["SolutionCount"].astype(int)
     return render_template('activities.html',
                            title='Courses',
                            year=datetime.now().year,
@@ -152,17 +175,38 @@ def activities(courseID):
 def solution(activityID):
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
+    form=SolutionForm()
+    if form.validate_on_submit():
+        postText=form.post.data
+        activityID=form.activityID.data
+        query='''select * from Solutions where activityID={}'''.format(activityID)
+        solution_df = pd.read_sql_query(query, conn)
+        if len(solution_df)>0:
+            query='''update Solutions set PostText=N'{}' where activityID={}'''.format(postText,activityID)
+            engine.execute(query)
+            #pd.read_sql_query(query, conn)
+        else:
+            query='''insert into Solutions (ActivityID, PostText) values ({},N'{}')'''.format(activityID,postText)
+            engine.execute(query)
+            #pd.read_sql_query(query, conn)
+        query = '''select * from Solutions where activityID={}'''.format(activityID)
+        solution_df = pd.read_sql_query(query, conn)
+        return redirect(url_for('solution_details', activityID=solution_df['ActivityID'][0]))
+        print(postText)
     query='''
     select ActivityID,Courses.Name as CourseName, ActivityName
     from Activities inner join Courses on Activities.CourseID=Courses.ID
     where ActivityID={}
     '''.format(activityID)
     activity_df = pd.read_sql_query(query, conn)
-    form=SolutionForm()
-    form.activityID=activityID
-    #if form.validate_on_submit():
-        # name=form.name.data
-        # session['name']=name
+    form.activityID.data=activityID
+    form.title.data=activity_df['ActivityName'][0]
+
+    query = '''select * from Solutions where activityID={}'''.format(activityID)
+    solution_df = pd.read_sql_query(query, conn)
+    if len(solution_df)>0:
+        form.post.data=solution_df['PostText'][0]
+
     return render_template(
         'solution.html',
         title='Solution',
@@ -171,6 +215,43 @@ def solution(activityID):
         courseName=activity_df['CourseName'][0],
         activityName=activity_df['ActivityName'][0]
     )
+@app.route('/solution_details/<activityID>', methods=['GET'])
+def solution_details(activityID):
+    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+    conn = engine.connect()
+    query = '''select Solutions.*,Activities.ActivityName 
+    from Solutions inner join Activities on Solutions.ActivityID=Activities.ActivityID
+    where Solutions.activityID={}'''.format(activityID)
+    solution_df=pd.read_sql_query(query, conn)
+    solution_text=""
+    activityName=""
+    if len(solution_df)>0:
+        solution_text=solution_df['PostText'][0]
+        activityName=solution_df['ActivityName'][0]
+    query='''select CourseID from Activities where ActivityID={}'''.format(activityID)
+    activity_df = pd.read_sql_query(query, conn)
+    return render_template("solutiondetails.html",
+                           post_text=solution_text,
+                           activityID=activityID,
+                           activityName=activityName,
+                           courseID=activity_df['CourseID'][0])
+
+@app.route('/imageuploader', methods=['POST'])
+#@login_required
+def imageuploader():
+    ext=''
+    file = request.files.get('file')
+    if file:
+        filename = file.filename.lower()
+        if ext in ['jpg', 'gif', 'png', 'jpeg']:
+            img_fullpath = os.path.join(app.config['UPLOADED_PATH'], filename)
+            file.save(img_fullpath)
+            return jsonify({'location' : filename})
+
+    # fail, image did not upload
+    output = make_response(404)
+    output.headers['Error'] = 'Image failed to upload'
+    return output
 
 @app.route('/contact')
 def contact():
@@ -200,12 +281,12 @@ def get_movie():
                 conditional=True,
             )
 
-@app.route('/<vid_name>')
-def serve_video(vid_name):
-    vid_path=os.path.join(app.config["UPLOAD_FOLDER"],"media1.mp4")
-    resp = make_response(send_file( vid_path,'video/mp4'))
-    resp.headers['Content-Disposition'] = 'inline'
-    return resp
+# @app.route('/<vid_name>')
+# def serve_video(vid_name):
+#     vid_path=os.path.join(app.config["UPLOAD_FOLDER"],"media1.mp4")
+#     resp = make_response(send_file( vid_path,'video/mp4'))
+#     resp.headers['Content-Disposition'] = 'inline'
+#     return resp
 
 if __name__ == '__main__':
     app.run(debug=True)

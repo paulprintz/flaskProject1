@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+    <h1>{{ activityName }}</h1>
+    <div>{{ post_text | safe }}</div>
+    <div><a href="{{ url_for("solution",activityID=activityID) }}">Edit</a></div>
+    <div><a href="{{ url_for("activities",courseID=courseID) }}">Back</a></div>
+{% endblock %}
