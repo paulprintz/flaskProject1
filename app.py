@@ -96,11 +96,11 @@ def studnet_works(classID):
         declare @UserID as int
         set @ClassID={}
         set @UserID={}
-        select r1.*,r2.RowNum from 
+        select r1.*,r2.RowNum,solutions_r3.SolutionCount from 
         (
             select userActivities.*,classActivities.PersonCompleted from
             (
-                select Activities.ActivityID,SubmitTime,ActivityName,UserID from StudentWorks inner join Activities on StudentWorks.ActivityID=Activities.ActivityID
+                select Activities.ActivityID,SubmitTime,ActivityName,UserID, SelfCheck, SelfCheckDateTime from StudentWorks inner join Activities on StudentWorks.ActivityID=Activities.ActivityID
                 where ClassID=@ClassID and UserID=@UserID
             ) as userActivities
             inner join (
@@ -118,9 +118,13 @@ def studnet_works(classID):
             ) as r1 where UserID=@UserID
         
         ) as r2 on r1.UserID=r2.UserID and r1.ActivityID=r2.ActivityID
+		left outer join 
+		(select ActivityID,Count(SolutionID) as SolutionCount from Solutions group by ActivityID) as solutions_r3 on r2.ActivityID=solutions_r3.ActivityID
         order by SubmitTime
         """.format(classID,userID)  #7765
         studentWorks_df=pd.read_sql_query(query, conn)
+        studentWorks_df['SolutionCount'].fillna(0,inplace=True)
+        studentWorks_df['SolutionCount']=studentWorks_df['SolutionCount'].astype(int)
         return render_template(
             'works.html',
             title='Student Works',
