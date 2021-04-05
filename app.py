@@ -22,7 +22,7 @@ bootstrap = Bootstrap(app)
 
 class NameForm(FlaskForm):
     name = StringField('请问，您的用户名是?', validators=[DataRequired()])
-    submit = SubmitField('Submit')
+    submit = SubmitField('登陆')
 
 class SolutionForm(FlaskForm):
     title = StringField('Title', validators=[InputRequired(), Length(max=100)])
@@ -68,10 +68,12 @@ def home():
     return render_template(
         'index.html',
         title='学习支撑平台',
-        # year=datetime.now().year,
+        year=datetime.now().year,
         form=form,
         name=name,
-        column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()), zip=zip,
+        column_names=courses_df.columns.values,
+        column_names_ch=["课程编号","班级名","班级编号","课程节点总数"],
+        row_data=list(courses_df.values.tolist()), zip=zip,
         enumerate=enumerate
     )
 # def addIndex(df):

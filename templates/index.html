@@ -2,27 +2,27 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-sm-3 col-md-2 sidebar" {% if name is none %} style="background-color: #FFFFFF; border-right:0px;" {% endif %}>
+    <div class="col-sm-3 col-md-2 sidebar" {% if name is none %}style="background-color: #FFFFFF; border-right:0px;"{% endif %}>
         {% if name is not none %}
-            <h1>Hello, {{ name }}!</h1>
+            <h2>Hello, {{ name }}!</h2>
             <p>
                 <a href="http://localhost:5000/logout" class="btn btn-primary btn-large">退出登录</a></p>
             </p>
         {% endif %}
     </div>
-    <div {% if name is none %} class="col-sm-6 col-sm-offset-3 col-md-8 col-md-offset-2 main" {% else %} class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main" {% endif %}>
+    <div {% if name is none %}class="col-sm-6 col-sm-offset-3 col-md-8 col-md-offset-2 main" {% else %}class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main"{% endif %}>
         {% if name is none %}
             <h1>Hello</h1>
             <p>
                 {{ wtf.quick_form(form) }}
             </p>
         {% else %}
-            <h1 style="padding-bottom: 20px;">各课程进度</h1>
+            <h2 style="padding-bottom: 20px;">各课程进度</h2>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
                         <thead>
-                            {% for col in column_names %}
+                            {% for col in column_names_ch %}
                                 <th> {{ col }} </th>
                             {% endfor %}
                         </thead>
@@ -39,6 +39,11 @@
                 </table>
             </div>
         {% endif %}
+        <p>&emsp;</p>
+        <hr />
+        <footer id="footer">
+            <p>&copy; {{ year }} - 上海师范大学 教育技术系</p>
+        </footer>
     </div>
 </div>
 
