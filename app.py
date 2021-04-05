@@ -21,7 +21,7 @@ app.config["UPLOAD_FOLDER"]='upload'
 bootstrap = Bootstrap(app)
 
 class NameForm(FlaskForm):
-    name = StringField('What is your name?', validators=[DataRequired()])
+    name = StringField('请问，您的用户名是?', validators=[DataRequired()])
     submit = SubmitField('Submit')
 
 class SolutionForm(FlaskForm):
@@ -67,7 +67,7 @@ def home():
     """Renders the home page."""
     return render_template(
         'index.html',
-        title='Home Page',
+        title='学习支撑平台',
         # year=datetime.now().year,
         form=form,
         name=name,

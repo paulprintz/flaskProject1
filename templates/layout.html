@@ -9,36 +9,44 @@
     <link rel="stylesheet" type="text/css" href="/static/content/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css" href="/static/content/bootstrap-theme.min.css" />
     <link rel="stylesheet" type="text/css" href="/static/content/ie10-viewport-bug-workaround.css" />
+    <link rel="stylesheet" type="text/css" href="/static/content/dashboard.css" />
     <link rel="stylesheet" type="text/css" href="/static/content/fly.css" />
     <script src="/static/scripts/modernizr-2.6.2.js"></script>
+    <!--[if lt IE 9]>
+      <script src="/static/scripts/html5shiv.min.js"></script>
+      <script src="/static/scripts/respond.min.js"></script>
+    <![endif]-->
 </head>
 
 <body>
-    <div class="navbar navbar-inverse navbar-fixed-top">
-        <div class="container">
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container-fluid">
             <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">点击展开</span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a href="/" class="navbar-brand">Application name</a>
+                <a href="/" class="navbar-brand">在线学习支撑平台</a>
             </div>
             <div class="navbar-collapse collapse">
-                <ul class="nav navbar-nav">
+                <ul class="nav navbar-nav navbar-right">
                     <li><a href="{{ url_for('home') }}">Home</a></li>
                     <li><a href="{{ url_for('about') }}">About</a></li>
                     <li><a href="{{ url_for('contact') }}">Contact</a></li>
                 </ul>
             </div>
         </div>
-    </div>
+    </nav>
 
-    <div class="container body-content">
+    <div class="container-fluid body-content">
         {% block content %}{% endblock %}
         <hr />
+    </div>
+    <div class="container-fluid">
         <footer>
-            <p>&copy; {{ year }} - My Flask Application</p>
+            <p>&copy; {{ year }} - 上海师范大学 教育技术系</p>
         </footer>
     </div>
 
