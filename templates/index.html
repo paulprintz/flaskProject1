@@ -29,7 +29,7 @@
                     </thead>
                     <tbody>
                         {% for i,row in enumerate(row_data) %}
-                            <tr onclick="location.href='/works/{{ row_data[i][2] }}';">
+                            <tr onclick="location.href='/works/{{row_data[i][2]}/}';">
                                 {% for col, row_ in zip(column_names,row) %}
                                     <td>{{ row_ }}</td>
                                 {% endfor %}
