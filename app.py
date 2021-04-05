@@ -17,51 +17,55 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hard to guess string'
-app.config["UPLOAD_FOLDER"]='upload'
+app.config["UPLOAD_FOLDER"] = 'upload'
 bootstrap = Bootstrap(app)
+
 
 class NameForm(FlaskForm):
     name = StringField('请问，您的用户名是?', validators=[DataRequired()])
     submit = SubmitField('登陆')
 
+
 class SolutionForm(FlaskForm):
     title = StringField('Title', validators=[InputRequired(), Length(max=100)])
     post = TextAreaField('Write something')
     tags = StringField('Tags')
-    file=FileField()
-    activityID=HiddenField('activityID')
-    submit=SubmitField('Submit')
+    file = FileField()
+    activityID = HiddenField('activityID')
+    submit = SubmitField('Submit')
 
-@app.route('/logout',methods=['GET'])
+
+@app.route('/logout', methods=['GET'])
 def logout():
-    session['name']=None
+    session['name'] = None
     return redirect(url_for('home'))
 
-@app.route('/', methods=['GET','POST'])
-@app.route('/home', methods=['GET','POST'])
+
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/home', methods=['GET', 'POST'])
 def home():
-    name=session.get('name') #None
-    form=NameForm()
+    name = session.get('name')  # None
+    form = NameForm()
     if form.validate_on_submit():
-        name=form.name.data
-        session['name']=name
+        name = form.name.data
+        session['name'] = name
         return redirect(url_for('home'))
 
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
-    query="""
-            select StudentCourses.*,ActivityCount from 
-        (
-        select Courses.ID as CourseID, Courses.Name +'- ' + Classes.ClassName as FullClassName,Classes.ClassID
-        from Courses inner join Classes on Courses.ID=Classes.CourseID
-        inner join Enrollment on Classes.ClassID=Enrollment.ClassID
-        inner join Users on Enrollment.UserID=Users.UserID
-        where Users.UserName = '{}'
-        ) as StudentCourses left outer join 
-        (
-            select CourseID, count(ActivityID) as ActivityCount from Activities group by CourseID
-        ) as CourseActivityCount on StudentCourses.CourseID=CourseActivityCount.CourseID
-        """.format(name)
+    query = """
+                select StudentCourses.*,ActivityCount from 
+            (
+            select Courses.ID as CourseID, Courses.Name +'- ' + Classes.ClassName as FullClassName,Classes.ClassID
+            from Courses inner join Classes on Courses.ID=Classes.CourseID
+            inner join Enrollment on Classes.ClassID=Enrollment.ClassID
+            inner join Users on Enrollment.UserID=Users.UserID
+            where Users.UserName = '{}'
+            ) as StudentCourses left outer join 
+            (
+                select CourseID, count(ActivityID) as ActivityCount from Activities group by CourseID
+            ) as CourseActivityCount on StudentCourses.CourseID=CourseActivityCount.CourseID
+            """.format(name)
     courses_df = pd.read_sql_query(query, conn)  # 数据库中已有课程名称和ID
 
     """Renders the home page."""
@@ -72,7 +76,7 @@ def home():
         form=form,
         name=name,
         column_names=courses_df.columns.values,
-        column_names_ch=["课程编号","班级名","班级编号","课程节点总数"],
+        column_names_ch=["课程编号", "班级名", "班级编号", "课程节点总数"],
         row_data=list(courses_df.values.tolist()), zip=zip,
         enumerate=enumerate
     )
@@ -86,14 +90,14 @@ def studnet_works(classID):
         engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
         conn = engine.connect()
         # Get UserID by UserName
-        query = '''
+        query='''
         select UserID from Users where USERNAME='{}'\
         '''.format(name)
         user_df = pd.read_sql_query(query, conn)
-        userID = user_df.values[0].item()
+        userID=user_df.values[0].item()
         print(userID)
         # classID=334, userID=7765
-        query = """
+        query="""
         declare @ClassID as int
         declare @UserID as int
         set @ClassID={}
@@ -118,15 +122,15 @@ def studnet_works(classID):
                 select ROW_NUMBER() over(Partition By ActivityID order by SubmitTime) as RowNum, UserID,ActivityID,SubmitTime from StudentWorks
                 where ClassID=@ClassID 
             ) as r1 where UserID=@UserID
-
+        
         ) as r2 on r1.UserID=r2.UserID and r1.ActivityID=r2.ActivityID
 		left outer join 
 		(select ActivityID,Count(SolutionID) as SolutionCount from Solutions group by ActivityID) as solutions_r3 on r2.ActivityID=solutions_r3.ActivityID
         order by SubmitTime
-        """.format(classID, userID)  # 7765
-        studentWorks_df = pd.read_sql_query(query, conn)
-        studentWorks_df['SolutionCount'].fillna(0, inplace=True)
-        studentWorks_df['SolutionCount'] = studentWorks_df['SolutionCount'].astype(int)
+        """.format(classID,userID)  #7765
+        studentWorks_df=pd.read_sql_query(query, conn)
+        studentWorks_df['SolutionCount'].fillna(0,inplace=True)
+        studentWorks_df['SolutionCount']=studentWorks_df['SolutionCount'].astype(int)
         return render_template(
             'works.html',
             title='Student Works',
@@ -134,13 +138,11 @@ def studnet_works(classID):
             name=name,
             column_names=studentWorks_df.columns.values, row_data=list(studentWorks_df.values.tolist()), zip=zip
         )
-
-
 @app.route('/courses')
 def courses():
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
-    query = '''
+    query='''
     select Courses.*,courseActivities_r1.AssignmentCount,courseSolutions_r2.SolutionCount from Courses
     left outer join
     (select CourseID, Count(ActivityID) as AssignmentCount from Activities where ActivityType='assignment' group by CourseID) as courseActivities_r1
@@ -149,22 +151,22 @@ def courses():
     group by CourseID) as courseSolutions_r2
     on Courses.ID=courseSolutions_r2.CourseID'''
     courses_df = pd.read_sql_query(query, conn)
-    courses_df.fillna(0, inplace=True)
-    courses_df['SolutionCount'] = courses_df['SolutionCount'].astype(int)
+    courses_df.fillna(0,inplace=True)
+    courses_df['SolutionCount']=courses_df['SolutionCount'].astype(int)
     courses_df['AssignmentCount'] = courses_df['AssignmentCount'].astype(int)
-    return render_template('courses.html',
-                           title='Courses',
-                           year=datetime.now().year,
-                           column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()),
-                           zip=zip
-                           )
+    return render_template(
+        'courses.html',
+        title='Courses',
+        year=datetime.now().year,
+        column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()),
+        zip=zip
+    )
 
-
-@app.route('/activities/<courseID>', methods=['GET'])
+@app.route('/activities/<courseID>',methods=['GET'])
 def activities(courseID):
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
-    query = '''
+    query='''
     select activities_r1.*,solutions_r2.SolutionCount from
     (select * from Activities where CourseID={} and ActivityType='assignment') as activities_r1
     left outer join
@@ -172,51 +174,50 @@ def activities(courseID):
     on activities_r1.ActivityID=solutions_r2.ActivityID
     '''.format(courseID)
     courses_df = pd.read_sql_query(query, conn)
-    courses_df.fillna(0, inplace=True)
+    courses_df.fillna(0,inplace=True)
     courses_df["SolutionCount"] = courses_df["SolutionCount"].astype(int)
-    return render_template('activities.html',
-                           title='Courses',
-                           year=datetime.now().year,
-                           column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()),
-                           zip=zip
-                           )
-
-
-@app.route('/solution/<activityID>', methods=['GET', 'POST'])
+    return render_template(
+        'activities.html',
+        title='Courses',
+        year=datetime.now().year,
+        column_names=courses_df.columns.values, row_data=list(courses_df.values.tolist()),
+        zip=zip
+    )
+@app.route('/solution/<activityID>', methods=['GET','POST'])
 def solution(activityID):
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
-    form = SolutionForm()
+    form=SolutionForm()
     if form.validate_on_submit():
-        postText = form.post.data
-        activityID = form.activityID.data
-        query = '''select * from Solutions where activityID={}'''.format(activityID)
+        postText=form.post.data
+        activityID=form.activityID.data
+        query='''select * from Solutions where activityID={}'''.format(activityID)
         solution_df = pd.read_sql_query(query, conn)
-        if len(solution_df) > 0:
-            query = '''update Solutions set PostText=N'{}' where activityID={}'''.format(postText, activityID)
+        if len(solution_df)>0:
+            query='''update Solutions set PostText=N'{}' where activityID={}'''.format(postText,activityID)
             engine.execute(query)
-            # pd.read_sql_query(query, conn)
+            #pd.read_sql_query(query, conn)
         else:
-            query = '''insert into Solutions (ActivityID, PostText) values ({},N'{}')'''.format(activityID, postText)
+            query='''insert into Solutions (ActivityID, PostText) values ({},N'{}')'''.format(activityID,postText)
             engine.execute(query)
-            # pd.read_sql_query(query, conn)
+            #pd.read_sql_query(query, conn)
         query = '''select * from Solutions where activityID={}'''.format(activityID)
         solution_df = pd.read_sql_query(query, conn)
         return redirect(url_for('solution_details', activityID=solution_df['ActivityID'][0]))
         print(postText)
-    query = '''
+    query='''
     select ActivityID,Courses.Name as CourseName, ActivityName
     from Activities inner join Courses on Activities.CourseID=Courses.ID
     where ActivityID={}
     '''.format(activityID)
     activity_df = pd.read_sql_query(query, conn)
-    form.activityID.data = activityID
-    form.title.data = activity_df['ActivityName'][0]
+    form.activityID.data=activityID
+    form.title.data=activity_df['ActivityName'][0]
 
     query = '''select * from Solutions where activityID={}'''.format(activityID)
     solution_df = pd.read_sql_query(query, conn)
-    if len(solution_df) > 0:
-        form.post.data = solution_df['PostText'][0]
+    if len(solution_df)>0:
+        form.post.data=solution_df['PostText'][0]
 
     return render_template(
         'solution.html',
