@@ -83,12 +83,14 @@ def home():
 # def addIndex(df):
 #     return [r for r in zip(range(len(df.values.tolist())),df.values.tolist())]
 
-@app.route('/works/<classID>', methods=['GET'])
+@app.route('/works/<classID>', methods=['GET','POST'])
 def studnet_works(classID):
     name = session.get('name')
     if name is not None:
         engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
         conn = engine.connect()
+        query = '''select ClassName from Classes where ClassID={}'''.format(classID)
+        className = pd.read_sql_query(query, conn)
         # Get UserID by UserName
         query='''
         select UserID from Users where USERNAME='{}'\
@@ -134,6 +136,7 @@ def studnet_works(classID):
         return render_template(
             'works.html',
             title='Student Works',
+            className=list(className.values.tolist())[0],
             year=datetime.now().year,
             name=name,
             column_names=studentWorks_df.columns.values, row_data=list(studentWorks_df.values.tolist()), zip=zip
