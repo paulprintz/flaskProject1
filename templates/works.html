@@ -11,11 +11,11 @@
         {% endif %}
     </div>
     <div {% if name is none %}class="col-sm-6 col-sm-offset-3 col-md-8 col-md-offset-2 main" {% else %}class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main"{% endif %}>
-        <h2 style="padding-bottom: 20px;">{{className}}课程活动完成详情</h2>
+        <h2 style="padding-bottom: 20px;">“{{className}}”课程活动完成详情</h2>
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
-                    {% for col in column_names %}
+                    {% for col in column_names_ch %}
                         <th> {{ col }} </th>
                     {% endfor %}
                 </thead>

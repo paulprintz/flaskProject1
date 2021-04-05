@@ -136,10 +136,12 @@ def studnet_works(classID):
         return render_template(
             'works.html',
             title='Student Works',
-            className=list(className.values.tolist())[0],
+            className=str(className.values[0][0]),
             year=datetime.now().year,
             name=name,
-            column_names=studentWorks_df.columns.values, row_data=list(studentWorks_df.values.tolist()), zip=zip
+            column_names=studentWorks_df.columns.values, row_data=list(studentWorks_df.values.tolist()),
+            column_names_ch=["活动编号", "完成时间", "活动名称", "用户编号", "自我检查", "检查日期", "完成人数", "完成名次", "参考答案数量"],
+            zip=zip
         )
 @app.route('/courses')
 def courses():
