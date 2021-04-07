@@ -16,7 +16,7 @@
             <div class="panel-heading">参考答案</div>
             <div class="panel-body">
                 <div>{{ post_text | safe }}</div>
-                <div style="display: none;">
+                <div>
                     <a class="btn btn-primary" role="button" href="{{ url_for("solution",activityID=activityID)}}">编辑答案</a></button>
                     <a class="btn btn-default" href="{{ url_for("activities",courseID=courseID)}}">返回活动</a></div>
                 </div>
