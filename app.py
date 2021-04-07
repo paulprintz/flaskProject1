@@ -23,7 +23,7 @@ bootstrap = Bootstrap(app)
 
 class NameForm(FlaskForm):
     name = StringField('请问，您的用户名是?', validators=[DataRequired()])
-    submit = SubmitField('登陆')
+    submit = SubmitField('登录')
 
 
 class SolutionForm(FlaskForm):
