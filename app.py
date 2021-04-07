@@ -234,6 +234,7 @@ def solution(activityID):
     )
 @app.route('/solution_details/<activityID>', methods=['GET'])
 def solution_details(activityID):
+    name = session.get('name')  # None
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
     query = '''select Solutions.*,Activities.ActivityName 
@@ -248,6 +249,7 @@ def solution_details(activityID):
     query='''select CourseID from Activities where ActivityID={}'''.format(activityID)
     activity_df = pd.read_sql_query(query, conn)
     return render_template("solutiondetails.html",
+                           name=name,
                            post_text=solution_text,
                            activityID=activityID,
                            activityName=activityName,

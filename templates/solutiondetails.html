@@ -1,9 +1,28 @@
 {% extends "layout.html" %}
 
 {% block content %}
+<div class="row">
+    <div class="col-sm-3 col-md-2 sidebar" {% if name is none %}style="background-color: #FFFFFF; border-right:0px;"{% endif %}>
+        {% if name is not none %}
+            <h2>Hello, {{ name }}!</h2>
+            <p>
+                <a href="http://localhost:5000/logout" class="btn btn-primary btn-large">退出登录</a></p>
+            </p>
+        {% endif %}
+    </div>
+    <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+        <h2>{{activityName }}</h2>
+        <div class="panel panel-default">
+            <div class="panel-heading">参考答案</div>
+            <div class="panel-body">
+                <div>{{ post_text | safe }}</div>
+                <div style="display: none;">
+                    <a class="btn btn-primary" role="button" href="{{ url_for("solution",activityID=activityID)}}">编辑答案</a></button>
+                    <a class="btn btn-default" href="{{ url_for("activities",courseID=courseID)}}">返回活动</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <h1>{{ activityName }}</h1>
-    <div>{{ post_text | safe }}</div>
-    <div><a href="{{ url_for("solution",activityID=activityID) }}">Edit</a></div>
-    <div><a href="{{ url_for("activities",courseID=courseID) }}">Back</a></div>
 {% endblock %}

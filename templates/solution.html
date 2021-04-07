@@ -25,6 +25,10 @@
         width: "100%",
     });
 </script>
-    <h1>{{ courseName+' - '+activityName }}</h1>
-    {{ wtf.quick_form(form) }}
+<div class="row">
+    <div class="col-sm-6 col-sm-offset-3 col-md-8 col-md-offset-2 main">
+        <h2>{{ courseName+' - '+activityName }}</h2>
+        {{ wtf.quick_form(form) }}
+    </div>
+</div>
 {% endblock %}
