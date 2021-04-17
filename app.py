@@ -5,7 +5,7 @@ from flask import Flask,render_template,session,redirect, url_for, send_from_dir
 from datetime import datetime
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField,FileField,TextAreaField,HiddenField
+from wtforms import StringField, SubmitField,FileField,TextAreaField,HiddenField,RadioField
 from wtforms.validators import DataRequired,InputRequired,Length
 
 from flask_bootstrap import Bootstrap
@@ -34,6 +34,19 @@ class SolutionForm(FlaskForm):
     activityID = HiddenField('activityID')
     submit = SubmitField('Submit')
 
+class ConfirmForm(FlaskForm):
+    choices=RadioField(label='Confirmation',choices=[('same','Same or similary to solution.'),
+                                                     ('different','Different but also works.'),
+                                                     ('better','Better than the solution.'),
+                                                     ('close','Close, emerging.'),
+                                                     ('none','None of above.')],default='same')
+    activityID = HiddenField('activityID')
+    classID = HiddenField('classID')
+    #userID = HiddenField('userID')
+    submit = SubmitField('Submit')
+
+class EmpytForm(FlaskForm):
+    field=HiddenField('')
 
 @app.route('/logout', methods=['GET'])
 def logout():
@@ -84,9 +97,10 @@ def home():
 #     return [r for r in zip(range(len(df.values.tolist())),df.values.tolist())]
 
 @app.route('/works/<classID>', methods=['GET','POST'])
-def studnet_works(classID):
+def student_works(classID):
     name = session.get('name')
     if name is not None:
+        session['classID']=classID
         engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
         conn = engine.connect()
         query = '''select ClassName from Classes where ClassID={}'''.format(classID)
@@ -232,11 +246,39 @@ def solution(activityID):
         courseName=activity_df['CourseName'][0],
         activityName=activity_df['ActivityName'][0]
     )
-@app.route('/solution_details/<activityID>', methods=['GET'])
+@app.route('/solution_details/<activityID>', methods=['GET','POST'])
 def solution_details(activityID):
     name = session.get('name')  # None
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
+    confirm_form = ConfirmForm()
+    # if StudentWork exists.
+    if confirm_form.validate_on_submit():
+        print(confirm_form.choices.data)
+        print(confirm_form.classID.data)
+        print(confirm_form.activityID.data)
+        # query = '''
+        #         select UserID from Users where USERNAME='{}'\
+        #         '''.format(name)
+        # user_df = pd.read_sql_query(query, conn)
+        # userID = user_df.values[0].item()
+        #print(userID)
+        #confirm_form.userID=userID
+        query='''select StudentWorks.* ,Users.UserName
+        from StudentWorks inner join Users on StudentWorks.UserID=Users.UserID
+        where UserName='{}' and ClassID={} and ActivityID={}'''.format(name,confirm_form.classID.data,confirm_form.activityID.data)
+        works_df=pd.read_sql_query(query,conn)
+        print(works_df)
+        userID=works_df['UserID'][0]
+        if len(works_df)>=1: # If the student work exists, then update the SelfCheck and datetime fields.
+            selfcheckDateTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            query='''update StudentWorks set SelfCheck='{}', SelfCheckDateTime='{}' 
+            where ClassID={} and ActivityID={} and UserID={}'''\
+                .format(confirm_form.choices.data,selfcheckDateTime,confirm_form.classID.data,confirm_form.activityID.data,userID)
+            print(query)
+            engine.execute(query)
+            return redirect(url_for('student_works', classID=confirm_form.classID.data))
+
     query = '''select Solutions.*,Activities.ActivityName 
     from Solutions inner join Activities on Solutions.ActivityID=Activities.ActivityID
     where Solutions.activityID={}'''.format(activityID)
@@ -248,12 +290,17 @@ def solution_details(activityID):
         activityName=solution_df['ActivityName'][0]
     query='''select CourseID from Activities where ActivityID={}'''.format(activityID)
     activity_df = pd.read_sql_query(query, conn)
+    confirm_form.activityID.data=activityID
+    confirm_form.classID.data=session.get('classID')
+    if solution_text=='' or solution_text is None:
+        confirm_form=EmpytForm()
     return render_template("solutiondetails.html",
                            name=name,
                            post_text=solution_text,
                            activityID=activityID,
                            activityName=activityName,
-                           courseID=activity_df['CourseID'][0])
+                           courseID=activity_df['CourseID'][0],
+                           form=confirm_form)
 
 @app.route('/imageuploader', methods=['POST'])
 #@login_required
