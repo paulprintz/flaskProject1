@@ -16,15 +16,18 @@
             <div class="panel-heading">参考答案-{{ activityName }}</div>
             <div class="panel-body">
                 <div>{{ post_text | safe }}</div>
-                <div>
-                    <a class="btn btn-primary" role="button" href="{{ url_for("solution",activityID=activityID)}}">编辑答案</a></button>
-                    <a class="btn btn-default" href="{{ url_for("activities",courseID=courseID)}}">返回活动</a></div>
-                </div>
+                {% if editable==True %}
+                    <div>
+                        <a class="btn btn-primary" role="button" href="{{ url_for("solution",activityID=activityID)}}">编辑答案</a></button>
+                        <a class="btn btn-default" href="{{ url_for("activities",courseID=courseID)}}">返回活动</a></div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
     <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-    <h2>tttt-{{ form.classID }}</h2>
+    <a href="{{ url_for("student_works",classID=classID) }}">返回课程</a>
+    <h2>确认参考答案：</h2>
                 <p>
                     {{ wtf.quick_form(form) }}
                 </p>

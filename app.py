@@ -5,7 +5,7 @@ from flask import Flask,render_template,session,redirect, url_for, send_from_dir
 from datetime import datetime
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField,FileField,TextAreaField,HiddenField,RadioField
+from wtforms import StringField, SubmitField,FileField,TextAreaField,HiddenField,RadioField,PasswordField,validators
 from wtforms.validators import DataRequired,InputRequired,Length
 
 from flask_bootstrap import Bootstrap
@@ -15,6 +15,8 @@ import pandas as pd
 
 import os
 
+from werkzeug.security import generate_password_hash,check_password_hash
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hard to guess string'
 app.config["UPLOAD_FOLDER"] = 'upload'
@@ -23,6 +25,7 @@ bootstrap = Bootstrap(app)
 
 class NameForm(FlaskForm):
     name = StringField('请问，您的用户名是?', validators=[DataRequired()])
+    password=PasswordField(label='Password')
     submit = SubmitField('进入')
 
 
@@ -48,6 +51,15 @@ class ConfirmForm(FlaskForm):
 class EmpytForm(FlaskForm):
     field=HiddenField('')
 
+class PasswordForm(FlaskForm):
+    password = PasswordField('New Password', [
+        validators.DataRequired(),
+        validators.EqualTo('confirm', message='Passwords must match')
+    ])
+    confirm = PasswordField('Repeat Password')
+    username=HiddenField('userName')
+    submit = SubmitField('Submit')
+
 @app.route('/logout', methods=['GET'])
 def logout():
     session['name'] = None
@@ -57,15 +69,34 @@ def logout():
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home', methods=['GET', 'POST'])
 def home():
+    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+    conn = engine.connect()
+
     name = session.get('name')  # None
     form = NameForm()
     if form.validate_on_submit():
         name = form.name.data
-        session['name'] = name
-        return redirect(url_for('home'))
+        #If password is empty, redirect user to password setting page.
+        query='''select * from Users where username ='{}'
+        '''.format(name)
+        users_df=pd.read_sql_query(query,conn)
+        db_psw_hash=users_df['PasswordHash'][0]
+        print(db_psw_hash)
+        #generated_hash=generate_password_hash(form.password.data)
+        psw=form.password.data
+        # if db_psw_hash is None:
+        #     db_psw_hash=""
+        if len(users_df)==1 and db_psw_hash is None:
+            session['name'] = name
+            return redirect(url_for('change_password'))
+        elif len(users_df)==1 and check_password_hash(db_psw_hash,psw): # User exists, and password hash match.
+            session['name'] = name
+            return redirect(url_for('home'))
 
-    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
-    conn = engine.connect()
+        else:
+            return redirect(url_for('logout'))
+
+
     query = """
                 select StudentCourses.*,ActivityCount from 
             (
@@ -93,6 +124,27 @@ def home():
         row_data=list(courses_df.values.tolist()), zip=zip,
         enumerate=enumerate
     )
+@app.route('/password',methods=['GET','POST'])
+def change_password():
+    name=session.get('name')
+    session['name']=None
+    form=PasswordForm()
+    if not name is None:
+        form.username.data=name
+    if form.validate_on_submit():
+        if form.password.data==form.confirm.data:
+            generated_hash = generate_password_hash(form.password.data)
+            query='''update Users set PasswordHash='{}' where UserName='{}'
+            '''.format(generated_hash, form.username.data)
+            engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+            conn = engine.connect()
+            engine.execute(query)
+            return redirect(url_for('home'))
+    return render_template(
+        'password.html',
+        form=form
+    )
+
 # def addIndex(df):
 #     return [r for r in zip(range(len(df.values.tolist())),df.values.tolist())]
 
@@ -252,22 +304,18 @@ def solution_details(activityID):
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
     confirm_form = ConfirmForm()
+
+
     # if StudentWork exists.
     if confirm_form.validate_on_submit():
-        print(confirm_form.choices.data)
-        print(confirm_form.classID.data)
-        print(confirm_form.activityID.data)
-        # query = '''
-        #         select UserID from Users where USERNAME='{}'\
-        #         '''.format(name)
-        # user_df = pd.read_sql_query(query, conn)
-        # userID = user_df.values[0].item()
-        #print(userID)
-        #confirm_form.userID=userID
-        query='''select StudentWorks.* ,Users.UserName
+        # print(confirm_form.choices.data)
+        # print(confirm_form.classID.data)
+        # print(confirm_form.activityID.data)
+        query = '''select StudentWorks.* ,Users.UserName
         from StudentWorks inner join Users on StudentWorks.UserID=Users.UserID
-        where UserName='{}' and ClassID={} and ActivityID={}'''.format(name,confirm_form.classID.data,confirm_form.activityID.data)
-        works_df=pd.read_sql_query(query,conn)
+        where UserName='{}' and ClassID={} and ActivityID={}'''.format(name, confirm_form.classID.data,
+                                                                       confirm_form.activityID.data)
+        works_df = pd.read_sql_query(query, conn)
         print(works_df)
         userID=works_df['UserID'][0]
         if len(works_df)>=1: # If the student work exists, then update the SelfCheck and datetime fields.
@@ -278,6 +326,15 @@ def solution_details(activityID):
             print(query)
             engine.execute(query)
             return redirect(url_for('student_works', classID=confirm_form.classID.data))
+
+    #Load confirmed value.
+    classID=session.get('classID')
+    query = '''select StudentWorks.* ,Users.UserName
+            from StudentWorks inner join Users on StudentWorks.UserID=Users.UserID
+            where UserName='{}' and ClassID={} and ActivityID={}'''.format(name, classID,activityID)
+    works_df = pd.read_sql_query(query, conn)
+    confirm_form.choices.default=works_df['SelfCheck'][0]
+    confirm_form.process()
 
     query = '''select Solutions.*,Activities.ActivityName 
     from Solutions inner join Activities on Solutions.ActivityID=Activities.ActivityID
@@ -291,16 +348,26 @@ def solution_details(activityID):
     query='''select CourseID from Activities where ActivityID={}'''.format(activityID)
     activity_df = pd.read_sql_query(query, conn)
     confirm_form.activityID.data=activityID
-    confirm_form.classID.data=session.get('classID')
+    confirm_form.classID.data=classID
+
     if solution_text=='' or solution_text is None:
         confirm_form=EmpytForm()
+    #If the user is Admin, show Edit Button.
+    query='''select * from Users inner join UserRoles on Users.UserID=UserRoles.UserID where Users.UserName='{}'
+    '''.format(name)
+    userRoles_df = pd.read_sql_query(query, conn)
+    isEditable=False
+    if 'Admin' in userRoles_df['RoleName'].to_list():
+        isEditable=True
     return render_template("solutiondetails.html",
                            name=name,
                            post_text=solution_text,
                            activityID=activityID,
                            activityName=activityName,
                            courseID=activity_df['CourseID'][0],
-                           form=confirm_form)
+                           form=confirm_form,
+                           editable=isEditable,
+                           classID=classID)
 
 @app.route('/imageuploader', methods=['POST'])
 #@login_required
