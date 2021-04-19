@@ -183,8 +183,11 @@ for index, row in new_classes.iterrows():
 ################################################################################################################
 # 增量备份 Users
 import pandas as pd
+import utility.Helper as helper
+url=helper.url_users
+users_file=helper.saveDataFile(url,starttime="2021-1-1",endtime="2021-12-1")
 # 1 获取学习平台的所有Users
-users_df=pd.read_excel("d:\\temp_data\\用户.xlsx")
+users_df=pd.read_excel(users_file) #"d:\\temp_data\\用户.xlsx")
 users_df=users_df[users_df['用户名'].notna()] # 过滤掉用户名为NaN的Users
 users_df.columns=['UserID','UserName','Phone','SSID','RealName','EMail','RegisterDateTime']
 # 2 获取数据库中已有的Users
