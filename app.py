@@ -393,7 +393,7 @@ def solution_details(activityID):
                            courseID=activity_df['CourseID'][0],
                            form=confirm_form,
                            editable=isEditable,
-                           classID=classID)
+                           classID=int(classID))
 
 @app.route('/imageuploader', methods=['POST'])
 #@login_required
