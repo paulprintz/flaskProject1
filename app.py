@@ -25,7 +25,7 @@ def data_extraction():
     etl.extractAll()
 
 sched = BackgroundScheduler(daemon=True)
-sched.add_job(data_extraction,'interval',minutes=10)
+sched.add_job(data_extraction,'interval',minutes=24*60)
 sched.start()
 
 app = Flask(__name__)
@@ -219,7 +219,7 @@ def student_works(classID):
             column_names_ch=["活动编号", "完成时间", "活动名称", "用户编号", "自我检查", "检查日期", "完成人数", "完成名次", "参考答案数量"],
             zip=zip
         )
-@app.route('/courses')
+@app.route('/courses', methods=['GET'])
 def courses():
     engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
     conn = engine.connect()
@@ -315,7 +315,6 @@ def solution_details(activityID):
     conn = engine.connect()
     confirm_form = ConfirmForm()
 
-
     # if StudentWork exists.
     if confirm_form.validate_on_submit():
         # print(confirm_form.choices.data)
@@ -337,14 +336,27 @@ def solution_details(activityID):
             engine.execute(query)
             return redirect(url_for('student_works', classID=confirm_form.classID.data))
 
-    #Load confirmed value.
-    classID=session.get('classID')
-    query = '''select StudentWorks.* ,Users.UserName
-            from StudentWorks inner join Users on StudentWorks.UserID=Users.UserID
-            where UserName='{}' and ClassID={} and ActivityID={}'''.format(name, classID,activityID)
-    works_df = pd.read_sql_query(query, conn)
-    confirm_form.choices.default=works_df['SelfCheck'][0]
-    confirm_form.process()
+
+
+    #But if the user is Admin, skip load confirmed value.
+    query='''select * from Users inner join UserRoles on Users.UserID=UserRoles.UserID where Users.UserName='{}'
+    '''.format(name)
+    userRoles_df = pd.read_sql_query(query, conn)
+    isAdmin=False
+    if 'Admin' in userRoles_df['RoleName'].to_list():
+        isAdmin=True
+    # Load confirmed value.
+    classID = session.get('classID')
+    if not isAdmin:
+        query = '''select StudentWorks.* ,Users.UserName
+                from StudentWorks inner join Users on StudentWorks.UserID=Users.UserID
+                where UserName='{}' and ClassID={} and ActivityID={}'''.format(name, classID,activityID)
+        works_df = pd.read_sql_query(query, conn)
+        if len(works_df)>0:
+            confirm_form.choices.default=works_df['SelfCheck'][0]
+            confirm_form.process()
+    else:
+        classID=-1
 
     query = '''select Solutions.*,Activities.ActivityName 
     from Solutions inner join Activities on Solutions.ActivityID=Activities.ActivityID
@@ -355,6 +367,10 @@ def solution_details(activityID):
     if len(solution_df)>0:
         solution_text=solution_df['PostText'][0]
         activityName=solution_df['ActivityName'][0]
+    else:
+        query='''select * from Activities where ActivityID={}'''.format(activityID)
+        activity_df=pd.read_sql_query(query, conn)
+        activityName=activity_df['ActivityName'][0]
     query='''select CourseID from Activities where ActivityID={}'''.format(activityID)
     activity_df = pd.read_sql_query(query, conn)
     confirm_form.activityID.data=activityID

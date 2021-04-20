@@ -13,7 +13,7 @@
     <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
         <h2>{{activityName }}</h2>
         <div class="panel panel-default">
-            <div class="panel-heading">参考答案-{{ activityName }}</div>
+            <div class="panel-heading">参考答案:</div>
             <div class="panel-body">
                 <div>{{ post_text | safe }}</div>
                 {% if editable==True %}
@@ -27,10 +27,12 @@
     </div>
     <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
     <a href="{{ url_for("student_works",classID=classID) }}">返回课程</a>
+    {% if classID>0 %}
     <h2>确认参考答案：</h2>
                 <p>
                     {{ wtf.quick_form(form) }}
                 </p>
+    {% endif %}
     </div>
 </div>
 

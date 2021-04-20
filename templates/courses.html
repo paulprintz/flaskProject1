@@ -1,11 +1,8 @@
 {% extends "layout.html" %}
 
 {% block content %}
-
-
-
-
     <div>
+{#    <p>{{ row_data }}</p>#}
     <table>
     <thead>
     {% for col in column_names %}
@@ -16,7 +13,7 @@
     {% for row in row_data %}
     <tr >
         {% for col, row_ in zip(column_names,row) %}
-
+        <td onclick="location.href='/activities/{{ row[0] }}';">{{ row_ }}</td>
         {% endfor %}
     </tr>
     {% endfor %}
