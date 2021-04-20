@@ -16,12 +16,22 @@ import pandas as pd
 import os
 
 from werkzeug.security import generate_password_hash,check_password_hash
+from apscheduler.schedulers.background import BackgroundScheduler
+
+def data_extraction():
+    """ Function for extracting data from stem college. """
+    print("Start extracting")
+    import utility.ETL as etl
+    etl.extractAll()
+
+sched = BackgroundScheduler(daemon=True)
+sched.add_job(data_extraction,'interval',minutes=10)
+sched.start()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hard to guess string'
 app.config["UPLOAD_FOLDER"] = 'upload'
 bootstrap = Bootstrap(app)
-
 
 class NameForm(FlaskForm):
     name = StringField('请问，您的用户名是?', validators=[DataRequired()])
