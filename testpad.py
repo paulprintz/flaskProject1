@@ -1,7 +1,6 @@
-column_names=['ID','Name',"Actitities","Solutions"]
-row_data=[[247, '数据库基础与应用（I）', 59, 4], [250, '手把手体验Python与机器学习', 56, 2], [290, '走进学习平台', 1, 0], [327, 'Arduino入门', 33, 2], [367, '用Python来玩乐高-Alpha', 14, 0], [373, '手把手体验Python与机器学习（OER）', 55, 1], [375, '肥皂大世界', 6, 0], [376, '智能运输小车', 0, 0], [382, '聪明的盲杖', 8, 0], [384, '创意陶泥3D打印', 16, 0], [385, '野外取水小妙招', 12, 0], [391, '高中人工智能初探', 0, 0], [393, '高中人工智能初探', 0, 0], [394, 'Tello无人机编程', 2, 0], [399, '设计制作个性化校园电子地图', 0, 0]]
-for row in row_data:
-    print(row)
-
-    for col, row_ in zip(column_names, row):
-        print(col,row_)
+from waitress import serve
+import app
+if __name__ == '__main__':
+    # app.run(debug=True)
+    print("stat server")
+    serve(app.app, host='0.0.0.0', port=5001)

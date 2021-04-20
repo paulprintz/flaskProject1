@@ -18,6 +18,8 @@ import os
 from werkzeug.security import generate_password_hash,check_password_hash
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from waitress import serve
+
 def data_extraction():
     """ Function for extracting data from stem college. """
     print("Start extracting")
@@ -447,8 +449,10 @@ def get_movie():
 #     resp.headers['Content-Disposition'] = 'inline'
 #     return resp
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# if __name__ == '__main__':
+#     # app.run(debug=True)
+#     print("stat server")
+#     serve(app, host='0.0.0.0', port=5001)
 
 
 # @app.route('/works/<cID>')
