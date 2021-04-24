@@ -39,6 +39,119 @@
                 </table>
             </div>
         {% endif %}
+        <div id="main1" style="width: 600px;height:400px;"></div>
+        <script language="JavaScript">
+            var column_names_ch={{ column_names_ch|safe }}
+            var myChart = echarts.init(document.getElementById('main1'));
+            // 指定图表的配置项和数据
+            var option = {
+                title: {
+                    text: 'ECharts测试'
+                },
+                tooltip: {},
+                legend: {
+                    data:['销量']
+                },
+                xAxis: {
+
+                },
+                yAxis: {
+                    data: column_names_ch
+                },
+                series: [{
+                    name: '销量',
+                    type: 'bar',
+                    data: [5, 20, 36, 10, 10, 20]
+                }]
+            };
+
+            // 使用刚指定的配置项和数据显示图表。
+            myChart.setOption(option);
+        </script>
+        <div id="main2" style="width: 680px;height:30px;"></div>
+        <script>
+            var themeEC4 = {
+                color: [
+                    '#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae', '#749f83',
+                    '#ca8622', '#bda29a', '#6e7074', '#546570', '#c4ccd3'
+                ]
+            };
+            var myChart = echarts.init(document.getElementById('main2'), themeEC4);
+            var option = {
+                grid: {
+                    top: 5,
+                    bottom: 5,
+                    left: 5,
+                    right: 50
+                },
+                title: {
+                    text: percent + '%',
+                    right: 0,
+                    top: 'middle',
+                    textStyle: {
+                        fontWeight: 500,
+                        fontSize: 12
+                    }
+                },
+                color: ['#74d1fd', '#eee'],
+                xAxis: {
+                    show:false,
+                    type : 'value',
+                    boundaryGap : [0, 0]
+                },
+                yAxis: [
+                    {
+                        type : 'category',
+                        data : [''],
+                        axisLine:{show:false},
+                        axisTick:[{
+                            show:false
+                        }]
+                    }
+                ],
+                series: [
+                    {
+                        type: 'bar',
+                        name: '已完成',
+                        stack: '总量',
+                        barMaxWidth: 20,
+                        label: {
+                            show: false,
+                            position: 'inside',
+                            formatter: '{c}%'
+                        },
+                        itemStyle: {
+                            barBorderRadius: [10, 10, 10, 10]
+                        },
+                        data: [37.5]
+                    },
+                    {
+                        type: 'bar',
+                        name: '未完成',
+                        stack: '总量',
+                        barMaxWidth: 20,
+                        label: {
+                            show: false,
+                            color: '#aaa',
+                            position: 'inside' ,
+                            formatter: '{c}%'
+                        },
+                        showBackground: true,
+                        backgroundStyle: {
+                            color: '#eee',
+                            barBorderRadius: [10,10,10,10]
+                        },
+                        itemStyle: {
+                            color: '#eee',
+                            barBorderRadius: [0, 10, 10, 0],
+                        },
+                        silent:true,
+                        data: [62.5]
+                    }
+                ]
+            };
+            myChart.setOption(option);
+        </script>
         <p>&emsp;</p>
         <hr />
         <footer id="footer">
