@@ -20,15 +20,14 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from waitress import serve
 
-def data_extraction():
-    """ Function for extracting data from stem college. """
+""" def data_extraction():
     print("Start extracting")
     import utility.ETL as etl
     etl.extractAll()
 
 sched = BackgroundScheduler(daemon=True)
 sched.add_job(data_extraction,'interval',minutes=24*60)
-sched.start()
+sched.start() """
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hard to guess string'
@@ -154,6 +153,7 @@ def change_password():
             return redirect(url_for('home'))
     return render_template(
         'password.html',
+        name=name,
         form=form
     )
 
