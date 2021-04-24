@@ -1,6 +1,7 @@
 """
 Routes and views for the flask application.
 """
+
 from flask import Flask,render_template,session,redirect, url_for, send_from_directory,send_file,make_response,request,jsonify
 from datetime import datetime
 
@@ -36,7 +37,7 @@ bootstrap = Bootstrap(app)
 
 class NameForm(FlaskForm):
     name = StringField('请问，您的用户名是?', validators=[DataRequired()])
-    password=PasswordField(label='Password')
+    password=PasswordField(label='密码')
     submit = SubmitField('进入')
 
 
@@ -63,13 +64,13 @@ class EmpytForm(FlaskForm):
     field=HiddenField('')
 
 class PasswordForm(FlaskForm):
-    password = PasswordField('New Password', [
+    password = PasswordField('新密码', [
         validators.DataRequired(),
-        validators.EqualTo('confirm', message='Passwords must match')
+        validators.EqualTo('confirm', message='两次输入的密码不同')
     ])
-    confirm = PasswordField('Repeat Password')
+    confirm = PasswordField('确认新密码')
     username=HiddenField('userName')
-    submit = SubmitField('Submit')
+    submit = SubmitField('确认更改')
 
 @app.route('/logout', methods=['GET'])
 def logout():
