@@ -133,7 +133,7 @@ def home():
         name=name,
         column_names=courses_df.columns.values,
         column_names_ch=["课程编号", "班级名", "班级编号", "课程节点总数"],
-        row_data=list(courses_df.values.tolist()), zip=zip,
+        row_data=list(courses_df.values.tolist()), zip=zip, len=len,
         enumerate=enumerate
     )
 @app.route('/password',methods=['GET','POST'])
