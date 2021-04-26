@@ -10,7 +10,7 @@
             </p>
         {% endif %}
     </div>
-    <div {% if name is none %}class="col-sm-6 col-sm-offset-3 col-md-8 col-md-offset-2 main" {% else %}class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main"{% endif %}>
+    <div id="rightMain" {% if name is none %}class="col-sm-6 col-sm-offset-3 col-md-8 col-md-offset-2 main" {% else %}class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main"{% endif %}>
         {% if name is none %}
             <h1>Hello</h1>
             <p>
@@ -18,7 +18,7 @@
             </p>
         {% else %}
             <h2 style="padding-bottom: 20px;">各课程进度</h2>
-            <div class="table-responsive">
+            <div class="table-responsive" style="display:none;">
                 <table class="table table-striped">
                     <thead>
                         <thead>
@@ -38,21 +38,21 @@
                     </tbody>
                 </table>
             </div>
-            <div id="main1" class="row" style="height:{{len(row_data)*80+40}}px;"></div>
+            <div id="main1" class="row" style="height:{{len(row_data)*60+30}}px;"></div>
         {% endif %}
         <script language="JavaScript">
-            var column_names_ch={{ column_names_ch|safe }};
-            var row_data={{ row_data|safe }};
+            var column_names_ch = {{ column_names_ch|safe }};
+            var row_data = {{ row_data|safe }};
             var myChart = echarts.init(document.getElementById('main1'));
-            var list_data= [[],[],[],[]];
-            var eWidth=$("#main1").width()*0.6+30;
+            var eWidth = $("#rightMain").outerWidth()*0.6+5;
+            var list_data = [[],[],[],[]];
             $.each(row_data,function(n,value) {
                 // alert(n + ' ' + value);
                 // var tmp=value.toString().split(',');
                 list_data[0].push(value[1]);  // 课程名，完成节点数，总节点数
-                list_data[1].push(100);
+                list_data[1].push(50*(n+1));
                 list_data[2].push(value[3]);
-                list_data[3].push(Math.round(parseInt(100)*100/parseInt(value[3])));
+                list_data[3].push(Math.round(parseInt(list_data[1][n])*100/list_data[2][n]));
             });
             // 指定图表的配置项和数据
             var option = {
@@ -60,24 +60,55 @@
 
                 },
                 tooltip: {
-                    trigger: 'axis',
+                    trigger: 'item',
                     textStyle: {
-
                     },
+                    formatter:function(params){
+                        var tipTxt = '<div><p>'+params.name+'</p>';
+                        tipTxt += '<span style="margin-right:5px;display:inline-block;width:10px;height:10px;border-radius:5px;background-color:'+params.color+';"></span>';
+                        tipTxt += '<span> 课程节点数总数：'+list_data[2][params.dataIndex]+'</span><br>';
+                        tipTxt += '<span style="margin-right:5px;display:inline-block;width:10px;height:10px;border-radius:5px;background-color:'+params.color+';"></span>';
+                        tipTxt += '<span> 已完成课程节点数：'+list_data[1][params.dataIndex]+'</span><br>';
+                        tipTxt += '<span style="margin-right:5px;display:inline-block;width:10px;height:10px;border-radius:5px;background-color:'+params.color+';"></span>';
+                        tipTxt += '<span> 完成率：'+list_data[3][params.dataIndex]+'%</span></div>';
+                        return  tipTxt
+                    }
                 },
                 legend: {
                     data:['完成活动']
                 },
                 grid: {
-                    left: '30%'
+                    left: '30%',
+                    right: '10%',
+                    top: 10
                 },
                 xAxis: {
                     show: false,
                     min: 0,
                     max: 100
                 },
-                yAxis: {
+                yAxis: [{
                     type: 'category',
+                    inverse: true,
+                    axisLine: {
+                        show: false
+                    },
+                    axisTick: {
+                        show: false
+                    },
+                    axisLabel: {
+                        show: true,
+                        align: 'right',
+                        textStyle: {
+                            color: '#333',
+                            fontFamily: 'Helvetica Neue',
+                            fontSize: 15
+                        }
+                    },
+                    data: list_data[0]
+                },{
+                    type: 'category',
+                    inverse: true,
                     axisLine: {
                         show: false
                     },
@@ -89,28 +120,40 @@
                         textStyle: {
                             color: '#333',
                             fontFamily: 'Helvetica Neue',
-                            fontsize: 14
+                            fontSize: 15
+                        },
+                        formatter:function(params){
+                            return  params+'%'
                         }
                     },
-                    data: list_data[0]
-                },
+                    data: list_data[3]
+                }],
                 series: [{
                     name: '课程完成度',
                     type: 'bar',
                     label: {
-                        show: true,
+                        show: false,
                         align: 'right',
-                        position: [eWidth, '25%'],
+                        position: [400, '25%'],
                         distance: 0,
                         formatter:function(params){
-                            return  params.data+'%'
+                            return
                         },
                     },
                     showBackground: true,
                     data: list_data[3]
                 }]
             };
-            myChart.setOption(option);
+            if (option && typeof option === 'object') {
+                myChart.setOption(option);
+            };
+            myChart.on('click',  function(params) {
+                location.href='/works/'+row_data[params.dataIndex][2];
+            });
+            window.onresize = function(){
+                myChart.resize();
+                eWidth = $("#rightMain").outerWidth()*0.6+5;
+            }
         </script>
         <p>&emsp;</p>
         <hr />

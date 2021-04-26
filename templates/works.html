@@ -16,14 +16,21 @@
             <table class="table table-striped">
                 <thead>
                     {% for col in column_names_ch %}
-                        <th> {{ col }} </th>
+                        {% if loop.index!=1 and loop.index!=4 %}
+                            <th> {{ col }} </th>
+                        {% endif %}
                     {% endfor %}
                 </thead>
                 <tbody>
                     {% for row in row_data %}
                         <tr>
                             {% for col, row_ in zip(column_names,row) %}
-                                <td onclick="location.href='/solution_details/{{row[0]}}';">{{ row_ }}</td>
+                                {% if loop.index==9 %}
+                            <td onclick="location.href='/solution_details/{{row[0]}}';">{% if row_!=0 %} <span class="btn btn-primary btn-xs">查看答案</span> {% endif %}</td>
+                                {% endif %}
+                                {% if loop.index!=1 and loop.index!=4 and loop.index!=9 %}
+                                    <td onclick="location.href='/solution_details/{{row[0]}}';">{{ row_ }}</td>
+                                {% endif %}
                             {% endfor %}
                         </tr>
                     {% endfor %}
