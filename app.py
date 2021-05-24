@@ -208,7 +208,7 @@ def student_works(classID):
 		left outer join 
 		(select ActivityID,Count(SolutionID) as SolutionCount from Solutions group by ActivityID) as solutions_r3 on r2.ActivityID=solutions_r3.ActivityID
         order by SubmitTime
-        """.format(classID,userID)  #7765
+        """.format(classID,userID)  #370，8060
         studentWorks_df=pd.read_sql_query(query, conn)
         studentWorks_df['SolutionCount'].fillna(0,inplace=True)
         studentWorks_df['SolutionCount']=studentWorks_df['SolutionCount'].astype(int)
@@ -277,12 +277,21 @@ def solution(activityID):
         activityID=form.activityID.data
         query='''select * from Solutions where activityID={}'''.format(activityID)
         solution_df = pd.read_sql_query(query, conn)
+        meta = MetaData()
+        solutions = Table(
+            'solutions', meta,
+            Column('ActivityID', Integer),
+            Column('PostText', String),
+            Column('SolutionID', Integer)
+        )
         if len(solution_df)>0:
-            query='''update Solutions set PostText=N'{}' where activityID={}'''.format(postText,activityID)
+            # query='''update Solutions set PostText=N'{}' where activityID={}'''.format(postText,activityID)
+            query=solutions.update().where(solutions.c.ActivityID==activityID).values(PostText=postText)
             engine.execute(query)
             #pd.read_sql_query(query, conn)
         else:
-            query='''insert into Solutions (ActivityID, PostText) values ({},N'{}')'''.format(activityID,postText)
+            # query='''insert into Solutions (ActivityID, PostText) values ({},N'{}')'''.format(activityID,postText)
+            query = solutions.insert().values(ActivityID=activityID, PostText=postText)
             engine.execute(query)
             #pd.read_sql_query(query, conn)
         query = '''select * from Solutions where activityID={}'''.format(activityID)
