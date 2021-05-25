@@ -22,6 +22,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from waitress import serve
 
+from io import StringIO, BytesIO
+import seaborn as sns
+import matplotlib.pyplot as plt
+import base64
 """ def data_extraction():
     print("Start extracting")
     import utility.ETL as etl
@@ -220,7 +224,8 @@ def student_works(classID):
             name=name,
             column_names=studentWorks_df.columns.values, row_data=list(studentWorks_df.values.tolist()),
             column_names_ch=["活动编号", "完成时间", "活动名称", "用户编号", "自我检查", "检查日期", "完成人数", "完成名次", "参考答案数量"],
-            zip=zip
+            zip=zip,
+            classID=classID
         )
 @app.route('/courses', methods=['GET'])
 def courses():
@@ -451,7 +456,60 @@ def get_movie():
                 "media1.mp4",
                 conditional=True,
             )
+@app.route("/plot",methods=["GET"])
+def testplot():
+    img =BytesIO() # StringIO()
+    sns.set_style("dark") #E.G.
+    y = [1,2,3,4,5]
+    x = [0,2,1,3,4]
+    plt.plot(x,y)
+    plt.savefig(img, format='png')
+    plt.close()
+    img.seek(0)
+    plot_url =base64.b64encode(img.getvalue()).decode('utf8') #Don't forget utf8, this is the TRICK!!!
+    return render_template('test.html', plot_url=plot_url)
+@app.route("/progress/<classID>",methods=["GET"])
+def progress(classID:int):
+    name = session.get('name')  # None
+    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+    conn = engine.connect()
+    # if StudentWork exists.
+    query = '''
+            select UserID from Users where USERNAME='{}'\
+            '''.format(name)
+    user_df = pd.read_sql_query(query, conn)
+    userID = user_df.values[0].item()
+    if userID>0:
+        # 练习完成个数
+        query = '''select UserID,count(ActivityID) as Completed from StudentWorks where ClassID={} group by UserID'''.format(classID)
+        activities_df = pd.read_sql_query(query, conn)
+        user_row=activities_df[(activities_df['UserID']==userID)]
+        x=user_row['Completed']
 
+        df1 = activities_df.sort_values(by=['Completed'], ascending=False)
+        df1=df1.reset_index()
+
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+        ax = sns.kdeplot(activities_df['Completed'])  # ,cumulative=True) # , bw_adjust=5, cut=0)
+        y = ax.lines[0].get_ydata()
+        mode_idx = y.argmax()
+        ax.vlines(x, 0, y[mode_idx], color='crimson', ls=':')
+        if len(df1)>0:
+            u_row=df1[(activities_df['UserID']==userID)]
+            if len(u_row)>0:
+                pct=u_row.index[0]/(len(df1)+1)
+                pct=round(pct*100)
+                ax.set_xlabel("You are in top {}%!".format(pct))
+            else:
+                ax.set_xlabel("You haven't accomplished anything yet!")
+        # plt.show()
+        img=BytesIO()
+        plt.savefig(img,format='png')
+        plt.close()
+        img.seek(0)
+        plot_url = base64.b64encode(img.getvalue()).decode('utf8')  # Don't forget utf8, this is the TRICK!!!
+        return render_template('progress.html', plot_url=plot_url,classID=classID)
 # @app.route('/<vid_name>')
 # def serve_video(vid_name):
 #     vid_path=os.path.join(app.config["UPLOAD_FOLDER"],"media1.mp4")

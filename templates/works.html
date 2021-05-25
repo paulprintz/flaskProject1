@@ -11,7 +11,7 @@
         {% endif %}
     </div>
     <div {% if name is none %}class="col-sm-6 col-sm-offset-3 col-md-8 col-md-offset-2 main" {% else %}class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main"{% endif %}>
-        <h2 style="padding-bottom: 20px;">“{{className}}”课程活动完成详情</h2>
+        <h2 style="padding-bottom: 20px;">“{{className}}”课程活动完成详情</h2><a href="/progress/{{ classID }}" class="btn btn-primary btn-large">考勤与平时成绩</a>
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>

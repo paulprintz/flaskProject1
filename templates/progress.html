@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div>
+    <p>
+    <a href="{{ url_for("student_works",classID=classID) }}"  class="btn btn-primary btn-large">返回课程</a>
+    </p>
+<img src="data:image/png;base64, {{plot_url}}">
+    </div>
+
+{% endblock %}

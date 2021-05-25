@@ -1,11 +1,5 @@
-import datetime
-stdtime='2021-03-30 23:30:19.000'
-dt=datetime.datetime.strptime(stdtime,'%Y-%m-%d %H:%M:%S.000')
-dt.isocalendar()[1] #week of year
+#import datetime
 
-def weekofyear(stdtime:str):
-    dt = datetime.datetime.strptime(stdtime, '%Y-%m-%d %H:%M:%S')
-    return dt.isocalendar()[1]  # week of year
 ##################################################################################################
 
 from flask import Flask,render_template,session,redirect, url_for, send_from_directory,send_file,make_response,request,jsonify
@@ -36,26 +30,47 @@ engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
 conn = engine.connect()
 
 conn.execute(ins)
+###############################################################################################################
 
+from flask import Flask,render_template,session,redirect, url_for, send_from_directory,send_file,make_response,request,jsonify
+from datetime import datetime
 
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField,FileField,TextAreaField,HiddenField,RadioField,PasswordField,validators
+from wtforms.validators import DataRequired,InputRequired,Length
+
+from flask_bootstrap import Bootstrap
+
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String
+import pandas as pd
+
+import os
 from werkzeug.security import generate_password_hash,check_password_hash
-name = 'klay'
-if name is not None:
-    classID=370
-    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
-    conn = engine.connect()
 
-    query = '''select ClassName from Classes where ClassID={}'''.format(classID)
-    className = pd.read_sql_query(query, conn)
-    # Get UserID by UserName
-    query = '''
+stdtime='2021-03-30 23:30:19.000'
+dt=datetime.strptime(stdtime,'%Y-%m-%d %H:%M:%S.000')
+dt.isocalendar()[1] #week of year
+
+def weekofyear(stdtime:str):
+    dt = datetime.strptime(stdtime, '%Y-%m-%d %H:%M:%S')
+    return dt.isocalendar()[1]  # week of year
+
+name = 'klay'
+classID=370
+engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+conn = engine.connect()
+
+query = '''select ClassName from Classes where ClassID={}'''.format(classID)
+className = pd.read_sql_query(query, conn)
+# Get UserID by UserName
+query = '''
         select UserID from Users where USERNAME='{}'\
         '''.format(name)
-    user_df = pd.read_sql_query(query, conn)
-    userID = user_df.values[0].item()
-    print(userID)
-    # classID=334, userID=7765
-    query = """
+user_df = pd.read_sql_query(query, conn)
+userID = user_df.values[0].item()
+print(userID)
+# classID=334, userID=7765
+query = """
         declare @ClassID as int
         declare @UserID as int
         set @ClassID={}
@@ -86,20 +101,37 @@ if name is not None:
 		(select ActivityID,Count(SolutionID) as SolutionCount from Solutions group by ActivityID) as solutions_r3 on r2.ActivityID=solutions_r3.ActivityID
         order by SubmitTime
         """.format(classID, userID)  # 370，8060
-    studentWorks_df = pd.read_sql_query(query, conn)
-    studentWorks_df['SolutionCount'].fillna(0, inplace=True)
-    studentWorks_df['SolutionCount'] = studentWorks_df['SolutionCount'].astype(int)
+studentWorks_df = pd.read_sql_query(query, conn)
+studentWorks_df['SolutionCount'].fillna(0, inplace=True)
+studentWorks_df['SolutionCount'] = studentWorks_df['SolutionCount'].astype(int)
 
-    # Create Attendance Points
-    studentWorks_df['WeekNumofYear']=studentWorks_df.apply(lambda x:weekofyear(str(x['SubmitTime'])),axis=1 )
+# Create Attendance Points
+studentWorks_df['WeekNumofYear']=studentWorks_df.apply(lambda x:weekofyear(str(x['SubmitTime'])),axis=1 )
+tmpdf=studentWorks_df.groupby('WeekNumofYear').count()[['ActivityID']]
+# return render_template(
+#     'works.html',
+#     title='Student Works',
+#     className=str(className.values[0][0]),
+#     year=datetime.now().year,
+#     name=name,
+#     column_names=studentWorks_df.columns.values, row_data=list(studentWorks_df.values.tolist()),
+#     column_names_ch=["活动编号", "完成时间", "活动名称", "用户编号", "自我检查", "检查日期", "完成人数", "完成名次", "参考答案数量"],
+#     zip=zip
+# )
 
-    # return render_template(
-    #     'works.html',
-    #     title='Student Works',
-    #     className=str(className.values[0][0]),
-    #     year=datetime.now().year,
-    #     name=name,
-    #     column_names=studentWorks_df.columns.values, row_data=list(studentWorks_df.values.tolist()),
-    #     column_names_ch=["活动编号", "完成时间", "活动名称", "用户编号", "自我检查", "检查日期", "完成人数", "完成名次", "参考答案数量"],
-    #     zip=zip
-    # )
+########################################################################################
+# 练习完成个数
+query='''select UserID,count(ActivityID) as Completed from StudentWorks where ClassID=370
+group by UserID'''
+activities_df=pd.read_sql_query(query,conn)
+import seaborn as sns
+import matplotlib.pyplot as plt
+# sns.displot(activities_df['Completed'],bins=20)
+# sns.boxplot(activities_df['Completed'])
+# sns.violinplot(activities_df['Completed'],split=True, inner="quartile")
+# sns.swarmplot(activities_df['Completed'])
+ax=sns.kdeplot(activities_df['Completed'] )#,cumulative=True) # , bw_adjust=5, cut=0)
+y=ax.lines[0].get_ydata()
+mode_idx=y.argmax()
+ax.vlines(53,0,y[mode_idx],color='crimson',ls=':')
+plt.show()
