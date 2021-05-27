@@ -402,6 +402,21 @@ def solution_details(activityID):
     isEditable=False
     if 'Admin' in userRoles_df['RoleName'].to_list():
         isEditable=True
+    # Produce bar chart
+    query = '''select count(selfcheck) as Counts,SelfCheck from StudentWorks 
+    where isnull(selfcheck,'')<>'' and ActivityID={}
+    group by SelfCheck'''.format(activityID)
+    selfcheck_df = pd.read_sql_query(query, conn)
+    # import seaborn as sns
+    plot_url=None
+    if len(selfcheck_df)>0:
+        sns.barplot(data=selfcheck_df, x='Counts', y='SelfCheck', orient='h')
+        img = BytesIO()
+        plt.savefig(img, format='png')
+        plt.close()
+        img.seek(0)
+        plot_url = base64.b64encode(img.getvalue()).decode('utf8')  # Don't forget utf8, this is the TRICK!!!
+    #return render_template('progress.html', plot_url=plot_url, classID=classID)
     return render_template("solutiondetails.html",
                            name=name,
                            post_text=solution_text,
@@ -410,7 +425,8 @@ def solution_details(activityID):
                            courseID=activity_df['CourseID'][0],
                            form=confirm_form,
                            editable=isEditable,
-                           classID=int(classID))
+                           classID=int(classID),
+                           plot_url=plot_url)
 
 @app.route('/imageuploader', methods=['POST'])
 #@login_required
