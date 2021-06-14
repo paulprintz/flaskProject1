@@ -150,4 +150,9 @@ where StudentWorks.ClassID=370
 active_students_df=pd.read_sql_query(query,conn) # 有学习记录的学生
 et_students_df:pd.DataFrame=pd.read_excel("D:\\SynologyDrive\\Drive\\_Teaching\\Python and Machine Learning\\June-1-2021\\数据库基础与应用II2020~2021第二学期 教育技术本科班名单.xlsx") #教育技术班名单
 et_students_status_df=et_students_df.merge(active_students_df, how="left", left_on=['姓名'],right_on=['RealName'],indicator=True)
-confirm_df=et_students_status_df[['学号/工号','姓名','RealName']]
+confirm_df1=et_students_status_df[['学号/工号','姓名','RealName']]
+
+general_students_df:pd.DataFrame=pd.read_excel("D:\\SynologyDrive\\Drive\\_Teaching\\Python and Machine Learning\\June-1-2021\\班级名册--39893210.xlsx") #通识班名单
+general_students_status_df=general_students_df.merge(active_students_df, how="left", left_on=['姓名'],right_on=['RealName'],indicator=True)
+confirm_df2=general_students_status_df[['学号/工号','姓名','RealName']]
+confirm_df2=confirm_df2.drop_duplicates()
