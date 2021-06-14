@@ -135,3 +135,19 @@ y=ax.lines[0].get_ydata()
 mode_idx=y.argmax()
 ax.vlines(53,0,y[mode_idx],color='crimson',ls=':')
 plt.show()
+
+
+########################################################################################
+# 期末教学数据整理：查找没有学习数据的学生
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String
+import pandas as pd
+engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+conn = engine.connect()
+query='''
+select distinct Users.* from Users inner join StudentWorks on Users.UserID=StudentWorks.UserID 
+where StudentWorks.ClassID=370
+'''
+active_students_df=pd.read_sql_query(query,conn) # 有学习记录的学生
+et_students_df:pd.DataFrame=pd.read_excel("D:\\SynologyDrive\\Drive\\_Teaching\\Python and Machine Learning\\June-1-2021\\数据库基础与应用II2020~2021第二学期 教育技术本科班名单.xlsx") #教育技术班名单
+et_students_status_df=et_students_df.merge(active_students_df, how="left", left_on=['姓名'],right_on=['RealName'],indicator=True)
+confirm_df=et_students_status_df[['学号/工号','姓名','RealName']]
