@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <div>
+
+    {% for b_name in badges %}
+        <img> {{ b_name }} </img>
+    {% endfor %}
+
+    </div>
+{% endblock %}

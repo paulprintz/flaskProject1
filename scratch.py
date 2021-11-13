@@ -156,3 +156,7 @@ general_students_df:pd.DataFrame=pd.read_excel("D:\\SynologyDrive\\Drive\\_Teach
 general_students_status_df=general_students_df.merge(active_students_df, how="left", left_on=['姓名'],right_on=['RealName'],indicator=True)
 confirm_df2=general_students_status_df[['学号/工号','姓名','RealName']]
 confirm_df2=confirm_df2.drop_duplicates()
+##################################################################################
+# 奖章系统数据准备
+import pandas as pd
+df=pd.read_csv(r"D:\tmp_data\badges\course_log_data.csv",encoding='gbk')

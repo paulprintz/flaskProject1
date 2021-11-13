@@ -26,6 +26,9 @@ from io import StringIO, BytesIO
 import seaborn as sns
 import matplotlib.pyplot as plt
 import base64
+
+import utility.badge_system
+
 """ def data_extraction():
     print("Start extracting")
     import utility.ETL as etl
@@ -526,6 +529,18 @@ def progress(classID:int):
         img.seek(0)
         plot_url = base64.b64encode(img.getvalue()).decode('utf8')  # Don't forget utf8, this is the TRICK!!!
         return render_template('progress.html', plot_url=plot_url,classID=classID)
+
+@app.route("/badges/<classID>",methods=["GET"])
+def badges(classID:int):
+    # my_medals(user_id=7803, log_data_path=course_log_data_path, course_id=373, class_id=370, syllabus_path=syllabus_csv_path)
+    user_name=name = session.get('name')
+    userID=utility.badge_system.find_userID(user_name)
+    earned_badges=utility.badge_system.my_medals(user_id=userID,log_data_path=utility.badge_system.course_log_data_path,
+                                          course_id=373, class_id=classID,
+                                          syllabus_path=utility.badge_system.syllabus_csv_path)
+    return render_template('badges.html',title='Badges',badges=earned_badges,zip=zip)
+
+
 # @app.route('/<vid_name>')
 # def serve_video(vid_name):
 #     vid_path=os.path.join(app.config["UPLOAD_FOLDER"],"media1.mp4")
