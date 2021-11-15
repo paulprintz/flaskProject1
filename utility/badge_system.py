@@ -7,18 +7,20 @@ from sklearn import metrics
 import time
 from datetime import datetime
 import matplotlib as mpl
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String
 mpl.rcParams['font.sans-serif'] = ['KaiTi']
 mpl.rcParams['font.serif'] = ['KaiTi']
 
-course_log_data_path=r"D:\tmp_data\badges\course_log_data.csv"
+course_log_data_path=r"D:\tmp_data\badges\export_stat_activity_access_records_2021-11-12.xlsx" #r"D:\tmp_data\badges\course_log_data.csv"
 syllabus_csv_path=r"D:\tmp_data\badges\课程大纲顺序2.csv"
 video_len_csv_path=r"D:\tmp_data\badges\视频时长表.csv" #视频时长表.csv
 
 df:pd.DataFrame # = pd.read_csv(course_log_data_path, encoding='gbk')
 def get_full_table(path=course_log_data_path, encoding='gbk', course_id=373, class_id=370):
     # 读取
-    df = pd.read_csv(path, encoding=encoding)
-    df = df[(df['课程id'] == course_id) & (df['班级id'] == class_id)]
+    #df = pd.read_csv(path, encoding=encoding)
+    df = pd.read_excel(path)
+    df = df[(df['课程id'] == course_id) & (df['班级id'] == int(class_id))]
     # 清除访问时间小于5秒的数据
     df = df[df['持续时间(秒)'] > 5]
     # 进入时间修正
@@ -166,24 +168,33 @@ def unit_passed(user_id):
             passed_unit.append(unit)
     return passed_unit
 def get_medal(user_id, online_gap=10, engagement_gap=30, prob_solving_gap=40, social_gap=3):
+    report_msg=[]
     online_result = cal_online(user_id)
     online_level = round(online_result[1] / online_gap)
-    print('用户: %d 的学习持续积分为 %d ，学习持续等级为: %d' % (user_id, online_result[1], online_level))
+    online_msg='用户: %d 的学习持续积分为 %d ，学习持续等级为: %d' % (user_id, online_result[1], online_level)
+    print(online_msg)
+    report_msg.append(online_msg)
 
     engagement_result = cal_engagement(user_id)
     engagement_level = round(engagement_result[1] / engagement_gap)
-    print('用户: %d 的学习投入积分为 %d ，学习投入等级为: %d， 时长积分为：%d, 反复观看积分为: %d, 时长比积分为: %d' % (
-    user_id, engagement_result[1], engagement_level, engagement_result[2], engagement_result[3], engagement_result[4]))
+    engagement_msg='用户: %d 的学习投入积分为 %d ，学习投入等级为: %d， 时长积分为：%d, 反复观看积分为: %d, 时长比积分为: %d' % (
+    user_id, engagement_result[1], engagement_level, engagement_result[2], engagement_result[3], engagement_result[4])
+    print(engagement_msg)
+    report_msg.append(engagement_msg)
 
     prob_solving_result = cal_prob_solving(user_id)
     prob_solving_level = round(prob_solving_result[1] / prob_solving_gap)
-    print('用户: %d 的问题解决积分为 %d ，问题解决等级为: %d， 提交积分为：%d, 停留积分为: %d' % (
-    user_id, prob_solving_result[1], prob_solving_level, prob_solving_result[2], prob_solving_result[3]))
+    prob_solving_msg='用户: %d 的问题解决积分为 %d ，问题解决等级为: %d， 提交积分为：%d, 停留积分为: %d' % (
+    user_id, prob_solving_result[1], prob_solving_level, prob_solving_result[2], prob_solving_result[3])
+    print(prob_solving_msg)
+    report_msg.append(prob_solving_msg)
 
     social_result = cal_social(user_id)
     social_level = round(social_result[1] / social_gap)
-    print('用户: %d 的社交协作积分为 %d ，社交协作等级为: %d， 访问积分为：%d, 停留积分为: %d' % (
-    user_id, social_result[1], social_level, social_result[2], social_result[3]))
+    social_msg='用户: %d 的社交协作积分为 %d ，社交协作等级为: %d， 访问积分为：%d, 停留积分为: %d' % (
+    user_id, social_result[1], social_level, social_result[2], social_result[3])
+    print(social_msg)
+    report_msg.append(social_msg)
 
     unit_passed_result = unit_passed(user_id)
 
@@ -197,7 +208,7 @@ def get_medal(user_id, online_gap=10, engagement_gap=30, prob_solving_gap=40, so
     for item in unit_passed_result:
         my_medals.append(medals['单元进度'][item])
     print('获得的奖牌：', my_medals)
-    return my_medals
+    return my_medals,report_msg
 
 
 def my_medals(user_id, log_data_path=course_log_data_path, course_id=373, class_id=370, syllabus_path=syllabus_csv_path):
@@ -221,11 +232,17 @@ def my_medals(user_id, log_data_path=course_log_data_path, course_id=373, class_
         unit_dict[item] = list(df_unit[df_unit['单元'] == item]['学习活动id'])
 
     full_table = get_full_table(path=log_data_path, course_id=course_id, class_id=class_id)
-    final_medal = get_medal(user_id=user_id)
-    return final_medal
+    final_medal,report = get_medal(user_id=user_id)
+    return final_medal,report
 
 def find_userID(user_name:str)->int:
-    rows=df[df['用户名']==user_name]['用户id']
+    # 2 获取数据库中已有的Users
+    engine = create_engine('mssql+pymssql://sa:111111@localhost/LSS', echo=True)
+    conn = engine.connect()
+    query = '''select * from Users where UserName=N'{}' '''.format(user_name)
+    df_user = pd.read_sql_query(query, conn)
+    rows=df_user['UserID']
     return rows.unique()[0]
 
 # badges=my_medals(user_id=7803, log_data_path=course_log_data_path, course_id=373, class_id=370, syllabus_path=syllabus_csv_path)
+#earned_badges=my_medals(user_id=8299,log_data_path=course_log_data_path,course_id=373, class_id=370,syllabus_path=syllabus_csv_path)

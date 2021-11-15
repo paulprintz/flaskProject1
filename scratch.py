@@ -160,3 +160,6 @@ confirm_df2=confirm_df2.drop_duplicates()
 # 奖章系统数据准备
 import pandas as pd
 df=pd.read_csv(r"D:\tmp_data\badges\course_log_data.csv",encoding='gbk')
+df1=pd.read_excel(r"D:\tmp_data\badges\export_stat_activity_access_records_2021-11-12.xlsx")
+
+import utility.badge_system

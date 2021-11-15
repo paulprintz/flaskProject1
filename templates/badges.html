@@ -2,9 +2,17 @@
 
 {% block content %}
     <div>
-
+    <h2>用户等级</h2>
+    {% for msg in report %}
+        <div>
+            <p> {{msg}} </p>
+        </div>
+    {% endfor %}
+    <h2>已获奖章</h2>
     {% for b_name in badges %}
-        <img> {{ b_name }} </img>
+        <div>
+            <img> {{ b_name }} </img>
+        </div>
     {% endfor %}
 
     </div>

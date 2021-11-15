@@ -535,10 +535,10 @@ def badges(classID:int):
     # my_medals(user_id=7803, log_data_path=course_log_data_path, course_id=373, class_id=370, syllabus_path=syllabus_csv_path)
     user_name=name = session.get('name')
     userID=utility.badge_system.find_userID(user_name)
-    earned_badges=utility.badge_system.my_medals(user_id=userID,log_data_path=utility.badge_system.course_log_data_path,
+    earned_badges,report=utility.badge_system.my_medals(user_id=userID,log_data_path=utility.badge_system.course_log_data_path,
                                           course_id=373, class_id=classID,
                                           syllabus_path=utility.badge_system.syllabus_csv_path)
-    return render_template('badges.html',title='Badges',badges=earned_badges,zip=zip)
+    return render_template('badges.html',title='Badges',badges=earned_badges,report=report,zip=zip)
 
 
 # @app.route('/<vid_name>')
